@@ -997,7 +997,7 @@
   $('vz-send').addEventListener('click', function(e){ e.preventDefault(); if (!ENDPOINT || !LAATSTE) return; var btn = this; var em = $('vz-email').value.trim();
     if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { $('vz-email').focus(); return; }
     btn.setAttribute('aria-disabled','true'); btn.textContent = 'Versturen...';
-    var payload = JSON.stringify(Object.assign({}, LAATSTE, { email: em, tekst: $('verzend-tekst').value, verstuurd: new Date().toISOString() }));
+    var payload = JSON.stringify(Object.assign({}, LAATSTE, { email: em, tekst: $('verzend-tekst').value, tekst_bewerkt: !!$('verzend-tekst').dataset.eigen, verstuurd: new Date().toISOString() }));
     var klaar = function(){ gelukt(); }, mislukt = function(){ btn.removeAttribute('aria-disabled'); btn.textContent = 'Verstuur naar Erfgoed Events'; $('vz-zelf-kop').innerHTML = '<span class="ok">Versturen lukte niet.</span> Gebruik een van de knoppen hieronder; dan komt het toch bij ons.'; $('vz-zelf').scrollIntoView({behavior:'smooth', block:'nearest'}); };
     fetch(ENDPOINT, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload, redirect: 'follow' })
       .then(function(r){ if (!r.ok) throw new Error('status ' + r.status); return r.text(); })
