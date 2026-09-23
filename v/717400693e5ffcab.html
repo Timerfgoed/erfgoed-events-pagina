@@ -449,7 +449,8 @@
   },
   "verzend_url": "https://script.google.com/macros/s/AKfycbzbxMXbZNfC2IttJG8J_R01l7KN648sWjtbp1bJqRSC17bDkm0Yb-P62Vg1B52_0EQO/exec",
   "dossier": "2026-09-22-elise-mersch-bruiloft-slot-zuylen",
-  "bron_thread": "1a057b28cdb71957"
+  "bron_thread": "1a057b28cdb71957",
+  "notion_page": "3e35f335-fbcd-81c1-bd72-eb5543afbfb9"
 }
 </script>
 <!-- ======================= EINDE DATA ======================= -->
@@ -965,7 +966,7 @@
     $('vz-klein').textContent = 'Gebeurt er niets als je klikt? Kopieer dan de tekst en mail hem naar ' + D.afzender.email + '.';
     var keuzes = {}; STAPPEN.forEach(function(s){ keuzes[s] = state[s].map(function(k){ return LABEL[s][k] || k; }); });
     var sleutels = {}; STAPPEN.forEach(function(s){ sleutels[s] = state[s].slice(); });
-    LAATSTE = { versie: D.versie || '', dossier: D.dossier || '', bron_thread: D.bron_thread || '', locatie: 'Slot Zuylen', klant: D.klant.organisatie, contact: D.klant.contact, pagina: location.href.split('#')[0],
+    LAATSTE = { versie: D.versie || '', dossier: D.dossier || '', bron_thread: D.bron_thread || '', notion_page: D.notion_page || '', locatie: 'Slot Zuylen', klant: D.klant.organisatie, contact: D.klant.contact, pagina: location.href.split('#')[0],
       aanleiding: state.aanleiding[0] ? LABEL.aanleiding[state.aanleiding[0]] : '', gasten: gLabel || '', gasten_getal: gIn || '', gasten_band: (!gIn && state.gasten[0]) ? state.gasten[0] : '',
       datum: datum ? datumWoorden(datum) : (state.seizoen[0] ? LABEL.seizoen[state.seizoen[0]] : ''), datum_iso: datum || '', seizoen: state.seizoen[0] || (datum ? seizoenVanDatum(datum) : ''),
       keuzes: keuzes, sleutels: sleutels, bekend: D.bekend || {}, tekst: body() };
