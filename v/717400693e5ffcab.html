@@ -421,13 +421,14 @@
 <!-- ======================= DATA: VUL DIT BLOK ======================= -->
 <script id="verhaal-data" type="application/json">
 {
-  "versie": "verhaal v3.4",
+  "versie": "verhaal v3.5",
   "gegenereerd": "22 september 2026",
   "klant": {
     "organisatie": "Elise en partner",
     "contact": "Elise Mersch",
     "rol": "",
-    "bedrijf": {}
+    "bedrijf": {},
+    "email": "elisemersch@hotmail.nl"
   },
   "gasten": null,
   "bekend": {
@@ -446,7 +447,9 @@
     "quote": "We hebben enorm genoten! Heerlijk eten, fantastische bediening onder leiding van Ellen, leuke uitleg van de chef Will!",
     "wie": "Dille & Kamille, na hun avond met Erfgoed Events"
   },
-  "verzend_url": "https://script.google.com/macros/s/AKfycbzbxMXbZNfC2IttJG8J_R01l7KN648sWjtbp1bJqRSC17bDkm0Yb-P62Vg1B52_0EQO/exec"
+  "verzend_url": "https://script.google.com/macros/s/AKfycbzbxMXbZNfC2IttJG8J_R01l7KN648sWjtbp1bJqRSC17bDkm0Yb-P62Vg1B52_0EQO/exec",
+  "dossier": "2026-09-22-elise-mersch-bruiloft-slot-zuylen",
+  "bron_thread": "1a057b28cdb71957"
 }
 </script>
 <!-- ======================= EINDE DATA ======================= -->
@@ -961,7 +964,11 @@
     if (wa) { $('vz-wa').hidden = false; $('vz-wa').href = 'https://wa.me/' + wa + '?text=' + encodeURIComponent(body()); }
     $('vz-klein').textContent = 'Gebeurt er niets als je klikt? Kopieer dan de tekst en mail hem naar ' + D.afzender.email + '.';
     var keuzes = {}; STAPPEN.forEach(function(s){ keuzes[s] = state[s].map(function(k){ return LABEL[s][k] || k; }); });
-    LAATSTE = { klant: D.klant.organisatie, contact: D.klant.contact, pagina: location.href.split('#')[0], gasten: gLabel || '', datum: datum ? datumWoorden(datum) : (state.seizoen[0] ? LABEL.seizoen[state.seizoen[0]] : ''), keuzes: keuzes, tekst: body() };
+    var sleutels = {}; STAPPEN.forEach(function(s){ sleutels[s] = state[s].slice(); });
+    LAATSTE = { versie: D.versie || '', dossier: D.dossier || '', bron_thread: D.bron_thread || '', locatie: 'Slot Zuylen', klant: D.klant.organisatie, contact: D.klant.contact, pagina: location.href.split('#')[0],
+      aanleiding: state.aanleiding[0] ? LABEL.aanleiding[state.aanleiding[0]] : '', gasten: gLabel || '', gasten_getal: gIn || '', gasten_band: (!gIn && state.gasten[0]) ? state.gasten[0] : '',
+      datum: datum ? datumWoorden(datum) : (state.seizoen[0] ? LABEL.seizoen[state.seizoen[0]] : ''), datum_iso: datum || '', seizoen: state.seizoen[0] || (datum ? seizoenVanDatum(datum) : ''),
+      keuzes: keuzes, sleutels: sleutels, bekend: D.bekend || {}, tekst: body() };
     try { var st = {}; STAPPEN.forEach(function(s){ st[s] = state[s]; }); st.datum = datum; st.gastenIn = $('gasten-in').value; localStorage.setItem('zuylen-verhaal-' + D.klant.organisatie, JSON.stringify(st)); } catch(e){}
   }
   document.querySelectorAll('.keuze-blok').forEach(function(blok){
@@ -982,6 +989,7 @@
   $('btn-gesprek').href = 'mailto:' + D.afzender.email + '?subject=' + encodeURIComponent('Gesprek plannen · ' + D.klant.organisatie);
   $('btn-anders').href = 'mailto:' + D.afzender.email + '?subject=' + encodeURIComponent('Iets anders in gedachten · ' + D.klant.organisatie);
   var LAATSTE = null, ENDPOINT = (D.verzend_url || '').trim();
+  if (D.klant && D.klant.email) { $('vz-email').value = D.klant.email; }
   if (ENDPOINT) { $('vz-direct').hidden = false; $('vz-zelf-kop').textContent = 'Liever zelf sturen? Dat kan ook.'; } else { $('vz-intro').textContent = 'Dit is jullie verhaal zoals het naar ons gaat. Kies hoe je het stuurt; aanpassen kan nog in het tekstvak.'; $('vz-zelf-kop').hidden = true; }
   $('btn-verhaal').addEventListener('click', function(e){ e.preventDefault(); var v = $('verzend'); v.hidden = false; render(); v.scrollIntoView({behavior:'smooth', block:'nearest'}); });
   function gelukt(){ $('vz-form').hidden = true; $('vz-gelukt').hidden = false; $('vz-gelukt-tekst').textContent = 'Jullie verhaal is bij ons binnen. ' + D.afzender.naam + ' belt je ' + D.afzender.belmoment + '; schikt dat niet, mail dan even naar ' + D.afzender.email + '.'; try { localStorage.setItem('zuylen-verstuurd-' + D.klant.organisatie, new Date().toISOString()); } catch(e){} }
