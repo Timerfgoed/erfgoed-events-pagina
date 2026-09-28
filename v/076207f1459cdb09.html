@@ -823,7 +823,7 @@ function eeAccent(el, zin, deel){
       <div class="sub-keuze keuze-blok" data-stap="fris">
         <div class="keuze-vraag"><h3>En fris en sappen?</h3><span class="hint">kies er één, of laat het open</span></div>
         <div class="keuzes drie" role="group">
-          <button class="keuze" data-key="afkoop"><span class="vink"></span><span class="kop">Arrangement</span><span class="uit">Fris en sappen de hele avond, voor een vast bedrag per gast; iedereen neemt wat hij wil.</span></button>
+          <button class="keuze" data-key="afkoop"><span class="vink"></span><span class="kop">Arrangement</span><span class="uit">Bij het wijnarrangement: fris en sappen de hele avond, voor een vast bedrag per gast; iedereen neemt wat hij wil.</span></button>
           <button class="keuze" data-key="nacalculatie"><span class="vink"></span><span class="kop">Op nacalculatie</span><span class="uit">Jullie betalen alleen wat er geschonken wordt.</span></button>
         </div>
       </div>
@@ -1147,6 +1147,7 @@ function eeAccent(el, zin, deel){
         var hide = (alleen && state.aanleiding.length && state.aanleiding[0] !== alleen) || (alleenS && state.seizoen.length && state.seizoen[0] !== alleenS && state.seizoen[0] !== 'open') || b.dataset.nietplek === '1';
         if (stap === 'gangen') hide = !(state.eten[0] === 'seizoen' || state.eten[0] === 'luxe');
         if (stap === 'borreldrank') hide = !heeftBorrel();
+        if (stap === 'fris' && b.dataset.key === 'afkoop') hide = state.drank[0] !== 'wijn';
         if (stap === 'locatie') hide = false;
         b.hidden = !!hide;
         if (hide) { var i = state[stap].indexOf(b.dataset.key); if (i >= 0) state[stap].splice(i,1); }
