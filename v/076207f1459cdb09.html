@@ -723,6 +723,13 @@ function eeAccent(el, zin, deel){
         <button class="keuze" data-key="sprekers" data-alleen="zakelijk"><span class="vink"></span><span class="kop" data-kop="vooraf.sprekers">Welkomstwoord of sprekers</span><span class="uit" data-uit="vooraf.sprekers">Katheder, geluid en scherm regelen wij; jullie doen het verhaal.</span></button>
         <button class="keuze" data-key="muziek"><span class="vink"></span><span class="kop" data-kop="vooraf.muziek">Muziek, onversterkt</span><span class="uit" data-uit="vooraf.muziek">Een duo bij de ontvangst.</span></button>
       </div>
+      <div class="sub-keuze keuze-blok" data-stap="borreldrank" id="borreldrank-blok" hidden>
+        <div class="keuze-vraag"><h3>En de drank bij de borrel?</h3><span class="hint">kies er één, of laat het open</span></div>
+        <div class="keuzes drie" role="group">
+          <button class="keuze" data-key="uur"><span class="vink"></span><span class="kop">Per uur</span><span class="uit">Wijn, bier, fris en water voor een vast bedrag per gast per uur.</span></button>
+          <button class="keuze" data-key="nacalculatie"><span class="vink"></span><span class="kop">Op nacalculatie</span><span class="uit">Jullie betalen alleen wat er geschonken wordt.</span></button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -810,13 +817,18 @@ function eeAccent(el, zin, deel){
     <div class="keuze-blok" data-stap="drank">
       <div class="keuze-vraag"><h3>Wat schenken we aan tafel?</h3><span class="hint">kies er één</span></div>
       <div class="keuzes" role="group">
-        <button class="keuze" data-key="wijn"><span class="vink"></span><span class="kop">Wijnarrangement</span><span class="uit">Per gang een glas bij het gerecht. Ook in een luxe versie.</span></button>
-        <button class="keuze" data-key="mocktail"><span class="vink"></span><span class="kop">Mocktailarrangement</span><span class="uit">Per gang een mocktail, gemaakt bij het menu.</span></button>
-        <button class="keuze" data-key="beide"><span class="vink"></span><span class="kop">Wijn, mocktail en water</span><span class="uit">Per gast: wijn voor wie wil, mocktail voor wie niet drinkt, water op tafel.</span></button>
-        <button class="keuze" data-key="nacalculatie"><span class="vink"></span><span class="kop">Vrij schenken</span><span class="uit">Wijn, bier en fris, per uur of op nacalculatie.</span></button>
+        <button class="keuze" data-key="wijn"><span class="vink"></span><span class="kop">Wijnarrangement, met en zonder alcohol</span><span class="uit">Per gang een glas bij het gerecht, gekozen door onze sommelier. Wie geen alcohol drinkt, krijgt bij elke gang een mocktail. Ook in een luxe versie.</span></button>
+        <button class="keuze" data-key="nacalculatie"><span class="vink"></span><span class="kop">Vrij schenken</span><span class="uit">Wijn, bier en fris aan tafel op nacalculatie: jullie betalen wat er geschonken wordt.</span></button>
+      </div>
+      <div class="sub-keuze keuze-blok" data-stap="fris">
+        <div class="keuze-vraag"><h3>En fris en sappen?</h3><span class="hint">kies er één, of laat het open</span></div>
+        <div class="keuzes drie" role="group">
+          <button class="keuze" data-key="afkoop"><span class="vink"></span><span class="kop">Afgekocht</span><span class="uit">Fris en sappen voor een vast bedrag; iedereen neemt wat hij wil.</span></button>
+          <button class="keuze" data-key="nacalculatie"><span class="vink"></span><span class="kop">Op nacalculatie</span><span class="uit">Jullie betalen alleen wat er geschonken wordt.</span></button>
+        </div>
       </div>
       <div class="sub-keuze keuze-blok" data-stap="water">
-        <div class="keuze-vraag"><h3>En het water op tafel?</h3><span class="hint">kies er één</span></div>
+        <div class="keuze-vraag"><h3>En het water op tafel?</h3><span class="hint">kies er één, of laat het open</span></div>
         <div class="keuzes drie" role="group">
           <button class="keuze" data-key="karaf"><span class="vink"></span><span class="kop">Karaffen</span><span class="uit">Tafelwater in karaffen, plat en bruisend, steeds bijgevuld.</span></button>
           <button class="keuze" data-key="stella"><span class="vink"></span><span class="kop">Flessen Stella Maris</span><span class="uit">Bruis en plat in flessen op tafel.</span></button>
@@ -854,7 +866,6 @@ function eeAccent(el, zin, deel){
       <div class="keuzes drie" role="group" data-multi="1">
         <button class="keuze" data-key="bloemen"><span class="vink"></span><span class="kop">Bloemen op de tafels</span><span class="uit">Op de dinertafels en de statafels, passend bij het seizoen.</span></button>
         <button class="keuze" data-key="menukaarten"><span class="vink"></span><span class="kop">Gepersonaliseerde menukaarten</span><span class="uit">Met jullie namen of logo, op elke tafel.</span></button>
-        <button class="keuze" data-key="bonbons"><span class="vink"></span><span class="kop">Koffie met bonbon of friandises</span><span class="uit">Handgemaakt, aan tafel na het dessert.</span></button>
         <button class="keuze" data-key="fotograaf"><span class="vink"></span><span class="kop">Foto- of videograaf</span><span class="uit">Van aankomst tot dessert.</span></button>
         <button class="keuze" data-key="goodiebag"><span class="vink"></span><span class="kop">Goodiebag met wijn</span><span class="uit">Voor elke gast een fles, geselecteerd door WOW-Wine.</span></button>
         <button class="keuze" data-key="taart" data-alleen="bruiloft"><span class="vink"></span><span class="kop">Bruidstaart van Huize van Wely</span><span class="uit">Of jullie eigen taart; die serveren wij.</span></button>
@@ -871,9 +882,16 @@ function eeAccent(el, zin, deel){
         <div class="num">VIII</div>
         <h2>Het laatste glas</h2>
         <p class="verhaal"><span data-tv="h8.tekst"></span></p>
-        <p class="muted" style="margin-top:14px;font-size:.95rem">Geen keuze hier. Dit hoofdstuk schrijft de avond zelf.</p>
+        
       </div>
       <div class="photo"><img src="" data-img="KOFFIE" alt="Koffie met een bonbon"></div>
+    </div>
+    <div class="keuze-blok" data-stap="koffie">
+      <div class="keuze-vraag"><h3>Koffie en thee na het dessert?</h3><span class="hint">kies er één, of laat het open</span></div>
+      <div class="keuzes drie" role="group">
+        <button class="keuze" data-key="koffie"><span class="vink"></span><span class="kop">Koffie en thee</span><span class="uit">Aan tafel, na het dessert.</span></button>
+        <button class="keuze" data-key="friandises"><span class="vink"></span><span class="kop">Koffie en thee met friandises</span><span class="uit">Met drie verschillende friandises uit onze keuken.</span></button>
+      </div>
     </div>
     <div class="kleine-kop">
       <p class="eyebrow">Goed om te weten</p>
@@ -1002,7 +1020,10 @@ function eeAccent(el, zin, deel){
     vooraf: {},
     eten: {seizoen:'Seizoensmenu aan tafel', luxe:'Luxe menu', walking:'Walking dinner', buffet:'Buffet van De Maaltuin'},
     gangen: {drie:'drie gangen', vier:'vier gangen', vijf:'vijf gangen'},
-    drank: {wijn:'Wijnarrangement', mocktail:'Mocktailarrangement', beide:'Wijn, mocktail en water', nacalculatie:'Vrij schenken (per uur of nacalculatie)'},
+    drank: {wijn:'Wijnarrangement, met en zonder alcohol', nacalculatie:'Vrij schenken op nacalculatie', mocktail:'Mocktailarrangement', beide:'Wijn, mocktail en water'},
+    fris: {afkoop:'Fris en sappen afgekocht', nacalculatie:'Fris en sappen op nacalculatie'},
+    borreldrank: {uur:'Borrel per uur', nacalculatie:'Borrel op nacalculatie'},
+    koffie: {koffie:'Koffie en thee', friandises:'Koffie en thee met friandises'},
     water: {karaf:'Karaffen', stella:'Flessen Stella Maris, bruis en plat'},
     gasten: {tot30:'tot 30', '30-50':'30 tot 50', '50-80':'50 tot 80', '80-120':'80 tot 120', '120plus':'meer dan 120'},
     extra: {},
@@ -1010,8 +1031,8 @@ function eeAccent(el, zin, deel){
     locatie: {}
   };
   PLEKKEN.forEach(function(s){ LABEL.locatie[s] = LOCS[s].naam; });
-  var VRAAG = {gasten:'Gasten', locatie:'Waar', aanleiding:'Waarvoor', seizoen:'Wanneer', ontvangst:'Eerste glas', vooraf:'Vooraf', eten:'Aan tafel', gangen:'Gangen', drank:'In het glas', water:'Water', extra:'Maakt het af', details:'Details'};
-  var STAPPEN = ['gasten','locatie','aanleiding','seizoen','ontvangst','vooraf','eten','gangen','drank','water','extra','details'];
+  var VRAAG = {gasten:'Gasten', locatie:'Waar', aanleiding:'Waarvoor', seizoen:'Wanneer', ontvangst:'Eerste glas', vooraf:'Vooraf', eten:'Aan tafel', gangen:'Gangen', drank:'In het glas', fris:'Fris en sappen', borreldrank:'Drank bij de borrel', koffie:'Koffie na het dessert', water:'Water', extra:'Maakt het af', details:'Details'};
+  var STAPPEN = ['gasten','locatie','aanleiding','seizoen','ontvangst','vooraf','borreldrank','eten','gangen','drank','fris','water','extra','details','koffie'];
   var HOOFD = (KIES_PLEK ? ['locatie'] : []).concat(['aanleiding','seizoen','ontvangst','vooraf','eten','drank','extra']);
   var MAANDEN = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   function seizoenVanDatum(iso){ var m = parseInt(iso.split('-')[1],10); return (m>=3&&m<=5)?'lente':(m>=6&&m<=8)?'zomer':(m>=9&&m<=11)?'herfst':'winter'; }
@@ -1104,6 +1125,7 @@ function eeAccent(el, zin, deel){
     $('c-intro').textContent = 'Beste ' + voornaam + ', dank voor je bericht. ' + wetenZin + plekZin + 'De rest vertellen we hieronder als een verhaal in acht hoofdstukken, en onderweg kies je wat bij jullie past. Wat je ons al vertelde staat ingevuld. Aan het eind staat jullie avond op een kaart; daar maken wij een voorstel van.';
   }
 
+  function heeftBorrel(){ return state.vooraf.indexOf('borrel') >= 0 || state.vooraf.indexOf('borrelplank') >= 0; }
   function occasionGroup(){ var a = state.aanleiding[0]; return a || 'default'; }
   var LAATSTE = null, ENDPOINT = (D.verzend_url || '').trim();
   function mist(){
@@ -1124,6 +1146,7 @@ function eeAccent(el, zin, deel){
         var alleen = b.dataset.alleen, alleenS = b.dataset.alleenSeizoen;
         var hide = (alleen && state.aanleiding.length && state.aanleiding[0] !== alleen) || (alleenS && state.seizoen.length && state.seizoen[0] !== alleenS && state.seizoen[0] !== 'open') || b.dataset.nietplek === '1';
         if (stap === 'gangen') hide = !(state.eten[0] === 'seizoen' || state.eten[0] === 'luxe');
+        if (stap === 'borreldrank') hide = !heeftBorrel();
         if (stap === 'locatie') hide = false;
         b.hidden = !!hide;
         if (hide) { var i = state[stap].indexOf(b.dataset.key); if (i >= 0) state[stap].splice(i,1); }
@@ -1140,6 +1163,7 @@ function eeAccent(el, zin, deel){
     ['lente','zomer','herfst','winter'].forEach(function(k){ $('menu-' + k).hidden = !(alle || sz === k); });
     $('menu-foto').hidden = alle;
     $('gangen-blok').hidden = !(state.eten[0] === 'seizoen' || state.eten[0] === 'luxe');
+    $('borreldrank-blok').hidden = !heeftBorrel();
     $('datum-ok').textContent = datum ? '✓ ' + datumWoorden(datum) + ', ' + LABEL.seizoen[seizoenVanDatum(datum)].toLowerCase() : '';
     document.querySelectorAll('[data-bekend-val]').forEach(function(el){ var st = el.dataset.bekendVal; var vals = state[st].map(function(k){ return LABEL[st][k] || k; }); if (st === 'gasten') vals = [($('gasten-in').value || g) + ' gasten']; if (st === 'seizoen' && datum) vals = [datumWoorden(datum) + ' (' + LABEL.seizoen[seizoenVanDatum(datum)].toLowerCase() + ')']; el.textContent = vals.join(', '); });
     var done = HOOFD.filter(function(s){ return state[s].length; }).length;
@@ -1153,9 +1177,10 @@ function eeAccent(el, zin, deel){
     STAPPEN.forEach(function(s){
       if (s === 'gasten' || s === 'locatie') return;
       if (s === 'gangen' && $('gangen-blok').hidden) return;
+      if (s === 'borreldrank' && $('borreldrank-blok').hidden) return;
       var vals = state[s].map(function(k){ return LABEL[s][k] || k; });
       if (s === 'seizoen' && datum) vals = [datumWoorden(datum) + ' (' + LABEL.seizoen[seizoenVanDatum(datum)].toLowerCase() + ')'];
-      var optioneel = (s === 'details' || s === 'water');
+      var optioneel = ['details','water','fris','borreldrank','koffie'].indexOf(s) >= 0;
       rows += '<div class="rij"><dt>' + VRAAG[s] + '</dt><dd class="' + (vals.length ? '' : 'leeg') + '">' + (vals.length ? esc(vals.join(', ')) : (optioneel ? 'geen' : 'nog te kiezen')) + '</dd></div>';
     });
     $('k-rijen').innerHTML = rows;
@@ -1169,7 +1194,7 @@ function eeAccent(el, zin, deel){
     if (m.length && !$('verzend').hidden) $('verzend').hidden = true;
     // tekst voor de mail en het endpoint
     var lines = ['Hoi ' + D.afzender.naam + ',', '', 'Ons verhaal voor ' + (L.naam_zin || L.naam) + (gLabel ? ' (' + gLabel + ' gasten)' : '') + ':', ''];
-    STAPPEN.forEach(function(s){ if (s === 'gasten' || s === 'locatie' || (s === 'gangen' && $('gangen-blok').hidden)) return; var vals = state[s].map(function(k){ return LABEL[s][k] || k; }); if (s === 'seizoen' && datum) vals = [datumWoorden(datum)]; lines.push(VRAAG[s] + ': ' + (vals.length ? vals.join(', ') : '...')); });
+    STAPPEN.forEach(function(s){ if (s === 'gasten' || s === 'locatie' || (s === 'gangen' && $('gangen-blok').hidden) || (s === 'borreldrank' && $('borreldrank-blok').hidden)) return; var vals = state[s].map(function(k){ return LABEL[s][k] || k; }); if (s === 'seizoen' && datum) vals = [datumWoorden(datum)]; lines.push(VRAAG[s] + ': ' + (vals.length ? vals.join(', ') : '...')); });
     lines.push('', 'Waar: ' + (L.naam_zin || L.naam), 'Datum of periode: ' + (datum ? datumWoorden(datum) : (state.seizoen[0] ? LABEL.seizoen[state.seizoen[0]] : '...')), 'Aantal gasten: ' + (gLabel || '...'), '', 'Groet,', D.klant.contact);
     var onderwerp = 'Ons verhaal voor ' + (L.naam_zin || L.naam) + ' · ' + D.klant.organisatie;
     var ta = $('verzend-tekst'); if (!ta.dataset.eigen) ta.value = lines.join('\n');
