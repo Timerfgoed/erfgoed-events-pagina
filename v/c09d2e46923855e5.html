@@ -447,7 +447,13 @@
   .section.night .eyebrow,.cover .eyebrow{color:rgba(250,246,238,.85)}
   /* accent volgt de grond: wijnrood op licht, goud op donker */
   .section.night,.cover,.topbar,footer{--brass:var(--gold)}
-  .kaart,.summary,.inv-card,.menu-card,.menukaartje,.terms,.facts-grid,.bedrijf,.proof-card,.curator{--brass:var(--wine)}
+  .kaart,.summary,.inv-card,.terms,.facts-grid,.bedrijf,.proof-card,.curator{--brass:var(--wine)}
+  /* menu's houden het goud van de oude opzet (Tim 28-09) */
+  .menu-card,.menukaartje{--brass:var(--btn)}
+  .menu-card .course .n,.menukaartje .course .n{font-weight:500}
+  .menu-card .upsell,.menukaartje .upsell{background:rgba(184,137,59,.08)}
+  .menu-card .upsell:hover,.menukaartje .upsell:hover{background:rgba(184,137,59,.14)}
+  .menu-card .upsell.on,.menukaartje .upsell.on{background:rgba(184,137,59,.16)}
   /* labels in mono, zoals de site */
   .facts-grid .k,.curator .who,.menu-card .sub,.course .n,.diet b,.wish .state,.inv th,.terms b,.proof cite,.bedrijf .k,.gids .g-bron,
   .keuze-vraag .hint,.menukaartje .sub,.kaart .k-eyebrow,.kaart dt,.kaart .k-open b,.bekend-regel .lbl,.topbar .meta,
