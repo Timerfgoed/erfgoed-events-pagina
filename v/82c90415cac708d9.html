@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="format-detection" content="telephone=no">
+<title>Nacalculatie event · Erfgoed Events</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<!--
+  Erfgoed Events · Nacalculatie event (digitale versie van "Nacalculatie event" + "Tellijst dranken", pdf's 08-09-2026)
+  Template v1.0 · 13-10-2026 · bron en uitleg: templates/nacalculatie/README.md in de Hivemind.
+  Bouwen: python3 templates/nacalculatie/build.py (vult alleen het blok nc-data). Niet per pagina aan de opmaak sleutelen.
+  Versturen = de mail-app van de eventmanager opent, gericht aan tim@erfgoedevents.nl (Tim 13-10-2026: nergens anders heen).
+  Geen server, geen script, geen Notion; wat de pagina onthoudt staat alleen in de browser van de eventmanager (concept).
+-->
+<style>
+  :root{
+    /* huisstijl v5 (brand/huisstijl-paginas.md); zakelijke variant: geen omslagfoto, geen verhaal */
+    --ink:#1F1714; --ink-soft:#4A3F3A; --paper:#F6F1E7; --paper-deep:#EDE5D6; --card:#FFFDF9;
+    --night:#3F0F12; --wine:#5C1A1E; --gold:#D9BC8A; --line:#E4D9C5; --line-strong:#C9BFA9;
+    --btn:#B8893B; --btn-soft:#D9B978; --btn-ink:#1B1512; --let-op:#8A5A12;
+    --display:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --body:"Manrope", "Helvetica Neue", Arial, sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+    --radius:2px;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html{-webkit-text-size-adjust:100%;scroll-padding-top:16px}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;font-variant-numeric:lining-nums}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px}
+  .topbar{background:var(--ink);color:var(--paper)}
+  .topbar .wrap{display:flex;justify-content:space-between;align-items:center;min-height:48px;gap:12px}
+  .merk{font-family:var(--mono);letter-spacing:.32em;font-size:.7rem;color:var(--gold);white-space:nowrap}
+  .topbar .meta{font-family:var(--mono);letter-spacing:.16em;font-size:.6rem;text-transform:uppercase;opacity:.75;white-space:nowrap}
+
+  .kop{padding:34px 0 6px}
+  .eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);display:flex;align-items:center;gap:12px}
+  .eyebrow::before{content:"";width:28px;height:1px;background:currentColor;opacity:.6;flex:none}
+  h1{font-family:var(--display);font-weight:300;font-size:clamp(2.5rem,9vw,3.9rem);line-height:1;letter-spacing:-.02em;margin:14px 0 12px;overflow-wrap:anywhere}
+  h1 em{font-style:italic;color:var(--wine)}
+  .intro{max-width:62ch;color:var(--ink-soft);margin:0}
+  .intro b{color:var(--ink);font-weight:600}
+
+  .afspraak{margin:18px 0 0;border:1px solid var(--line);background:var(--paper-deep);padding:14px 16px;border-radius:var(--radius)}
+  .afspraak .l{margin-bottom:8px}
+  .afspraak dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0}
+  .afspraak dt{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);padding-top:3px}
+  .afspraak dd{margin:0}
+
+  .melding{margin:16px 0 0;padding:12px 14px;border-left:3px solid var(--btn);background:#fff;font-size:.92rem;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+  .linkknop{font:inherit;font-size:.9rem;font-weight:600;background:none;border:0;padding:6px 0;color:var(--wine);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+  .blok{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 18px 22px;margin:16px 0}
+  .blok-kop{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:6px}
+  .nr{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;color:var(--wine);flex:none}
+  h2{font-family:var(--display);font-weight:400;font-size:1.7rem;line-height:1.1;margin:0;letter-spacing:-.005em}
+  .bstatus{margin-left:auto;font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap;text-align:right}
+  .bstatus.punt{color:var(--let-op)}
+  .uitleg{color:var(--ink-soft);font-size:.92rem;margin:8px 0 0}
+
+  .l{display:block;font-family:var(--mono);font-size:.62rem;font-weight:400;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px}
+  .vraag{margin-top:18px}
+  .raster{display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:16px}
+  .raster .vol{grid-column:1/-1}
+  .raster4{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:16px}
+  @media (max-width:620px){ .raster4{grid-template-columns:1fr 1fr} }
+  @media (max-width:520px){ .raster{grid-template-columns:1fr} }
+
+  input[type=text],input[type=number],input[type=date],input[type=time],input[type=email],textarea,select{
+    font:inherit;font-size:16px;width:100%;padding:10px 12px;border:1px solid var(--line-strong);border-radius:var(--radius);
+    background:#fff;color:var(--ink);min-height:46px;-webkit-appearance:none;appearance:none}
+  input[type=date],input[type=time]{min-width:0}
+  select{background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+  textarea{min-height:92px;resize:vertical;line-height:1.5}
+  textarea.groot{min-height:170px}
+  input::placeholder,textarea::placeholder{color:#9A8F86}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--wine);outline-offset:0;border-color:var(--wine)}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+  input[type=number]{-moz-appearance:textfield}
+  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+
+  .keuze{display:flex;flex-wrap:wrap;gap:8px}
+  .keuze button{font:inherit;font-size:.95rem;font-weight:600;padding:9px 18px;min-height:44px;border-radius:999px;border:1px solid var(--line-strong);background:#fff;color:var(--ink);cursor:pointer;touch-action:manipulation}
+  .keuze button:hover{border-color:var(--ink-soft)}
+  .keuze button[aria-pressed="true"]{background:var(--wine);border-color:var(--wine);color:var(--paper)}
+  .als{margin-top:12px;padding:2px 0 2px 14px;border-left:2px solid var(--line)}
+  .als[hidden]{display:none}
+
+  .teller{display:flex;align-items:stretch;width:100%}
+  .teller input{text-align:center;border-radius:0;min-width:0;padding-left:4px;padding-right:4px}
+  .teller button{flex:none;width:44px;font:inherit;font-size:1.2rem;line-height:1;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);cursor:pointer;touch-action:manipulation}
+  .teller button:first-child{border-right:0;border-radius:var(--radius) 0 0 var(--radius)}
+  .teller button:last-child{border-left:0;border-radius:0 var(--radius) var(--radius) 0}
+  .teller button:active{background:var(--paper-deep)}
+
+  .ref{font-size:.86rem;color:var(--ink-soft);margin-top:6px}
+  .ref b{font-weight:600;color:var(--ink)}
+  .hint{font-size:.86rem;color:var(--let-op);margin-top:6px}
+  .hint[hidden]{display:none}
+
+  .subkop{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:24px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+  .subkop:first-of-type{border-top:0;padding-top:0}
+  .subkop h3{font-family:var(--mono);font-weight:400;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;margin:0;color:var(--ink)}
+  .subkop span{font-size:.82rem;color:var(--ink-soft)}
+
+  .lijst{display:grid;gap:8px}
+  .rij{display:grid;gap:8px;align-items:center;grid-template-columns:minmax(0,1fr) 150px 40px}
+  .rij.overig{grid-template-columns:minmax(0,1fr) 150px 112px 40px}
+  .rij.extra{grid-template-columns:minmax(0,1.4fr) 150px minmax(0,1fr) 112px 40px}
+  .rij .weg{width:40px;height:46px;border:1px solid var(--line);background:transparent;color:var(--ink-soft);font-size:1.2rem;cursor:pointer;border-radius:var(--radius)}
+  .rij .besteld{grid-column:1/-1;font-size:.82rem;color:var(--ink-soft);margin:-4px 0 4px}
+  .rij .besteld.te-veel{color:var(--let-op)}
+  .rij.vast{grid-template-columns:minmax(0,1fr) 150px}
+  .rij.vast .naam{padding:10px 0;border-bottom:1px dotted var(--line)}
+  .toevoegen{font:inherit;font-size:.9rem;font-weight:600;margin-top:10px;padding:8px 14px;border:1px dashed var(--line-strong);background:transparent;color:var(--ink);border-radius:999px;cursor:pointer}
+  .koppen{display:none}
+  @media (max-width:620px){
+    .rij.extra{grid-template-columns:minmax(0,1fr) 40px;padding:10px;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+    .rij.extra > *:not(.weg){grid-column:1/2}
+    .rij.extra .weg{grid-column:2/3;grid-row:1/2}
+    .rij.extra .klein-label{display:block}
+  }
+  @media (max-width:520px){
+    .rij.wijn{grid-template-columns:minmax(0,1fr) 40px}
+    .rij.wijn > input[type=text]{grid-column:1/2;grid-row:1}
+    .rij.wijn .weg{grid-column:2/3;grid-row:1}
+    .rij.wijn .teller{grid-column:1/2;grid-row:2;max-width:200px}
+    .rij.wijn .besteld{grid-column:1/-1;grid-row:3}
+    .rij.overig{grid-template-columns:minmax(0,1fr) 112px 40px}
+    .rij.overig > input[type=text]:first-child{grid-column:1/3;grid-row:1}
+    .rij.overig .weg{grid-column:3/4;grid-row:1}
+    .rij.overig .teller{grid-column:1/2;grid-row:2}
+    .rij.overig select{grid-column:2/4;grid-row:2}
+  }
+  @media (max-width:420px){
+    .rij.vast{grid-template-columns:minmax(0,1fr) 132px}
+  }
+  .klein-label{display:none;font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:6px 0 -4px}
+
+  .vinkje{display:flex;gap:12px;align-items:flex-start;margin-top:14px;cursor:pointer;font-size:.95rem}
+  .vinkje input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--wine)}
+
+  .slot{border-color:var(--line-strong)}
+  .controle{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+  .controle li{padding:10px 12px 10px 14px;border-left:3px solid var(--line-strong);background:#fff;font-size:.93rem}
+  .controle li.nodig{border-left-color:var(--wine)}
+  .controle li.letop{border-left-color:var(--let-op)}
+  .controle li.tip{border-left-color:var(--line-strong);color:var(--ink-soft)}
+  .controle li b{font-family:var(--mono);font-weight:500;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
+  .controle li.nodig b{color:var(--wine)}
+  .controle li.letop b{color:var(--let-op)}
+  .controle li button{font:inherit;font-size:.85rem;font-weight:600;background:none;border:0;padding:0 0 0 6px;color:var(--wine);text-decoration:underline;cursor:pointer}
+  .alles-ok{margin-top:14px;padding:12px 14px;background:#fff;border-left:3px solid var(--ink-soft);font-size:.93rem}
+
+  .knoppen{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;font:inherit;font-weight:700;font-size:1rem;border-radius:999px;padding:13px 22px;min-height:48px;border:1px solid transparent;background:var(--btn);color:var(--btn-ink);cursor:pointer;text-decoration:none;touch-action:manipulation}
+  .btn:hover{background:var(--btn-soft)}
+  .btn.twee{background:transparent;border-color:var(--line-strong);color:var(--ink)}
+  .btn.twee:hover{background:#fff}
+  .btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+  .naar{font-size:.86rem;color:var(--ink-soft);margin-top:10px}
+  .naar b{color:var(--ink)}
+  .na-versturen{margin-top:16px;padding:14px 16px;border:1px solid var(--line-strong);background:#fff}
+  .na-versturen[hidden]{display:none}
+  .na-versturen p{margin:0 0 8px}
+  .voorbeeld{margin-top:18px}
+  .voorbeeld summary{cursor:pointer;font-weight:600;font-size:.92rem}
+  .voorbeeld pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:.74rem;line-height:1.55;background:#fff;border:1px solid var(--line);padding:14px;margin:10px 0 0;max-height:420px;overflow:auto}
+
+  .balk{position:sticky;bottom:0;z-index:5;background:rgba(31,23,20,.96);color:var(--paper);margin-top:28px;padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
+  .balk .wrap{display:flex;align-items:center;gap:12px;justify-content:space-between}
+  .balk .tekst{font-size:.86rem;line-height:1.35}
+  .balk .tekst b{color:var(--gold);font-weight:600}
+  .balk .btn{min-height:42px;padding:9px 18px;font-size:.92rem;flex:none}
+  footer{padding:22px 0 30px;color:var(--ink-soft);font-size:.8rem}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap"><span class="merk">ERFGOED EVENTS</span><span class="meta">Nacalculatie · intern</span></div></header>
+
+<main class="wrap" id="top">
+  <section class="kop">
+    <div class="eyebrow">Voor de eventmanager · direct na afloop</div>
+    <h1 id="titel">Nacalculatie <em>event.</em></h1>
+    <p class="intro">Vul in wat <b>anders ging dan afgesproken</b>. Ging iets volgens het draaiboek, dan laat je het staan. Personeelsuren hoef je niet in te vullen, die lopen automatisch mee. Ben je klaar, dan opent je mail met alles erin, gericht aan Tim.</p>
+    <div class="afspraak" id="afspraak" hidden>
+      <span class="l">Afgesproken (uit het draaiboek)</span>
+      <dl id="afspraak-lijst"></dl>
+    </div>
+    <div class="melding" id="concept-melding" hidden>
+      <span id="concept-tekst">Je concept is bewaard op dit toestel.</span>
+      <button type="button" class="linkknop" id="wis-start">Wis en begin opnieuw</button>
+      <button type="button" class="linkknop" id="wis-zeker" hidden>Ja, alles wissen</button>
+    </div>
+  </section>
+
+  <!-- 01 EVENT -->
+  <section class="blok" id="b-event" aria-labelledby="h-event">
+    <div class="blok-kop"><span class="nr">01</span><h2 id="h-event">Event</h2><span class="bstatus" data-status="event"></span></div>
+    <div class="raster">
+      <div class="vol"><label class="l" for="f-klant">Naam event / klant</label><input type="text" id="f-klant" data-veld="event.klant" autocomplete="off" placeholder="Bijv. SurePay relatiediner"></div>
+      <div><label class="l" for="f-datum">Datum</label><input type="date" id="f-datum" data-veld="event.datum"></div>
+      <div><label class="l" for="f-locatie">Locatie</label><input type="text" id="f-locatie" data-veld="event.locatie" list="locaties" autocomplete="off" placeholder="Kies of typ"><datalist id="locaties"></datalist></div>
+      <div><label class="l" for="f-em">Eventmanager</label><input type="text" id="f-em" data-veld="event.em" autocomplete="name" placeholder="Je naam"></div>
+      <div><label class="l" for="f-mice">MICE-nummer <span style="text-transform:none;letter-spacing:0">(als je het weet)</span></label><input type="text" id="f-mice" data-veld="event.mice" autocomplete="off" placeholder="Q2026…"></div>
+    </div>
+  </section>
+
+  <!-- 02 GASTEN -->
+  <section class="blok" id="b-gasten" aria-labelledby="h-gasten">
+    <div class="blok-kop"><span class="nr">02</span><h2 id="h-gasten">Gasten</h2><span class="bstatus" data-status="gasten"></span></div>
+    <!-- met opgave uit het draaiboek -->
+    <div id="gasten-met-opgave" hidden>
+      <div class="vraag"><span class="l">Klopte de opgave?</span>
+        <div class="keuze" data-keuze="gasten.zoals"><button type="button" data-w="ja">Ja, zoals opgegeven</button><button type="button" data-w="nee">Nee, anders</button></div>
+        <p class="ref" id="opgave-ref"></p>
+      </div>
+      <div class="als" data-als="gasten.zoals=nee">
+        <div class="raster4">
+          <div><label class="l" for="g-diner-a">Diner</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-diner-a" data-veld="gasten.diner" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+          <div><label class="l" for="g-borrel-a">Alleen borrel</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-borrel-a" data-veld="gasten.borrel" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+          <div><label class="l" for="g-kind-a">Kinderen</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-kind-a" data-veld="gasten.kinderen" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+        </div>
+        <div class="vraag"><label class="l" for="g-toel-a">Wat was er anders?</label><textarea id="g-toel-a" data-veld="gasten.toelichting" placeholder="Bijv. 6 afmeldingen op de dag, 2 gasten extra aangeschoven"></textarea></div>
+      </div>
+    </div>
+    <!-- zonder opgave (algemene pagina) -->
+    <div id="gasten-zonder-opgave">
+      <p class="uitleg">Hoeveel gasten waren er echt?</p>
+      <div class="raster4">
+        <div><label class="l" for="g-diner">Diner</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-diner" data-veld="gasten.diner" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+        <div><label class="l" for="g-borrel">Alleen borrel</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-borrel" data-veld="gasten.borrel" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+        <div><label class="l" for="g-kind">Kinderen</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-kind" data-veld="gasten.kinderen" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+      </div>
+      <div class="vraag"><span class="l">Anders dan de opgave vooraf?</span>
+        <div class="keuze" data-keuze="gasten.anders"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+        <div class="als" data-als="gasten.anders=ja"><label class="l" for="g-toel">Wat was de opgave, en wat was er anders?</label><textarea id="g-toel" data-veld="gasten.toelichting" placeholder="Bijv. opgave 120 diner, 8 afmeldingen op de dag"></textarea></div>
+      </div>
+    </div>
+    <div class="raster4">
+      <div><label class="l" for="g-crew">Crew mee-gegeten</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="g-crew" data-veld="gasten.crew" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+    </div>
+  </section>
+
+  <!-- 03 TIJD -->
+  <section class="blok" id="b-tijd" aria-labelledby="h-tijd">
+    <div class="blok-kop"><span class="nr">03</span><h2 id="h-tijd">Tijd</h2><span class="bstatus" data-status="tijd"></span></div>
+    <div class="raster">
+      <div><label class="l" for="t-einde">Programma afgelopen om</label><input type="time" id="t-einde" data-veld="tijd.einde"><p class="ref" id="eind-ref" hidden></p></div>
+    </div>
+    <div class="vraag"><span class="l">Later dan afgesproken?</span>
+      <div class="keuze" data-keuze="tijd.later"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+      <p class="hint" id="uitloop-hint" hidden></p>
+    </div>
+    <div class="als" data-als="tijd.later=ja">
+      <div class="raster">
+        <div><label class="l" for="t-min">Hoeveel minuten?</label><div class="teller"><button type="button" data-stap="-15" aria-label="15 minuten minder">−</button><input type="number" inputmode="numeric" min="0" id="t-min" data-veld="tijd.minuten" data-geheel><button type="button" data-stap="15" aria-label="15 minuten meer">+</button></div></div>
+      </div>
+      <div class="vraag"><span class="l">Wie vroeg erom?</span>
+        <div class="keuze" data-keuze="tijd.wie"><button type="button" data-w="klant">Klant</button><button type="button" data-w="wijzelf">Wijzelf</button><button type="button" data-w="locatie">Locatie</button></div>
+      </div>
+      <div class="vraag"><label class="l" for="t-waarom">Waarom liep het uit?</label><textarea id="t-waarom" data-veld="tijd.waarom" placeholder="Bijv. speech liep uit, klant vroeg om de bar een half uur langer open"></textarea></div>
+    </div>
+  </section>
+
+  <!-- 04 DRANK -->
+  <section class="blok" id="b-drank" aria-labelledby="h-drank">
+    <div class="blok-kop"><span class="nr">04</span><h2 id="h-drank">Drank · tellijst</h2><span class="bstatus" data-status="drank"></span></div>
+    <p class="uitleg">Definitieve telling na afloop: wat er verbruikt is, in hele flessen of stuks. Bij de wijnen de naam zoals die op de fles staat.</p>
+    <div class="raster">
+      <div><label class="l" for="d-door">Geteld door</label><input type="text" id="d-door" data-veld="drank.door" autocomplete="off" placeholder="Naam"></div>
+      <div><label class="l" for="d-om">Geteld om</label><input type="time" id="d-om" data-veld="drank.om"></div>
+    </div>
+
+    <div class="subkop"><h3>Wijn en bubbels</h3><span>wit, rood, rosé, cava, champagne</span></div>
+    <div class="lijst" id="lijst-wijnen"></div>
+    <button type="button" class="toevoegen" data-toevoegen="wijnen">+ Wijn toevoegen</button>
+
+    <div class="subkop"><h3>Bier en fris</h3><span>standaardassortiment</span></div>
+    <div class="lijst" id="lijst-standaard"></div>
+
+    <div class="subkop"><h3>Overig</h3><span>sterke drank, mocktails, meegebrachte drank</span></div>
+    <div class="lijst" id="lijst-overig"></div>
+    <button type="button" class="toevoegen" data-toevoegen="overig">+ Regel toevoegen</button>
+
+    <div class="vraag"><span class="l">Eigen drank van de klant geschonken?</span>
+      <div class="keuze" data-keuze="drank.eigen"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+      <div class="als" data-als="drank.eigen=ja"><div class="raster">
+        <div><label class="l" for="d-eigen-fl">Hoeveel flessen?</label><div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button><input type="number" inputmode="numeric" min="0" id="d-eigen-fl" data-veld="drank.eigen_fl" data-geheel><button type="button" data-stap="1" aria-label="plus">+</button></div></div>
+        <div><label class="l" for="d-eigen-wat">Wat?</label><input type="text" id="d-eigen-wat" data-veld="drank.eigen_wat" placeholder="Bijv. eigen champagne voor de toost"></div>
+      </div></div>
+    </div>
+    <div class="vraag"><span class="l">Drank retour naar de klant meegegeven?</span>
+      <div class="keuze" data-keuze="drank.retour"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+      <div class="als" data-als="drank.retour=ja"><label class="l" for="d-retour">Wat en hoeveel?</label><input type="text" id="d-retour" data-veld="drank.retour_wat" placeholder="Bijv. 4 flessen eigen wijn retour"></div>
+    </div>
+    <div class="vraag"><label class="l" for="d-bijz">Bijzonderheden</label><textarea id="d-bijz" data-veld="drank.bijz" placeholder="Extra flessen, andere of duurdere wijn, bar langer open, weggeschonken"></textarea></div>
+  </section>
+
+  <!-- 05 EXTRA BESTELD -->
+  <section class="blok" id="b-extra" aria-labelledby="h-extra">
+    <div class="blok-kop"><span class="nr">05</span><h2 id="h-extra">Extra besteld tijdens het event</h2><span class="bstatus" data-status="extra"></span></div>
+    <div class="vraag"><span class="l">Iets extra besteld door de klant?</span>
+      <div class="keuze" data-keuze="extra.status"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+    </div>
+    <div class="als" data-als="extra.status=ja">
+      <p class="uitleg">Nodig voor de factuur: wat, hoeveel, wie van de klant erom vroeg en hoe laat.</p>
+      <div class="lijst" id="lijst-extra" style="margin-top:12px"></div>
+      <button type="button" class="toevoegen" data-toevoegen="extra">+ Nog iets</button>
+    </div>
+  </section>
+
+  <!-- 06 KOSTELOOS WEGGEGEVEN -->
+  <section class="blok" id="b-gratis" aria-labelledby="h-gratis">
+    <div class="blok-kop"><span class="nr">06</span><h2 id="h-gratis">Iets kosteloos weggegeven?</h2><span class="bstatus" data-status="gratis"></span></div>
+    <div class="vraag"><div class="keuze" data-keuze="gratis.status"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div></div>
+    <div class="als" data-als="gratis.status=ja"><label class="l" for="x-gratis">Wat en waarom?</label><textarea id="x-gratis" data-veld="gratis.wat" placeholder="Bijv. rondje cava op de zaak na de vertraging in de keuken"></textarea></div>
+  </section>
+
+  <!-- 07 NIET DOORGEGAAN -->
+  <section class="blok" id="b-nietdoor" aria-labelledby="h-nietdoor">
+    <div class="blok-kop"><span class="nr">07</span><h2 id="h-nietdoor">Niet doorgegaan</h2><span class="bstatus" data-status="nietdoor"></span></div>
+    <div class="vraag"><span class="l">Stond er iets in het draaiboek dat we niet hebben uitgevoerd?</span>
+      <div class="keuze" data-keuze="nietdoor.status"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+    </div>
+    <div class="als" data-als="nietdoor.status=ja"><label class="l" for="x-nietdoor">Wat, en waarom niet?</label><textarea id="x-nietdoor" data-veld="nietdoor.wat" placeholder="Bijv. rondleiding vervallen, gids ziek"></textarea></div>
+  </section>
+
+  <!-- 08 BREUK OF SCHADE -->
+  <section class="blok" id="b-breuk" aria-labelledby="h-breuk">
+    <div class="blok-kop"><span class="nr">08</span><h2 id="h-breuk">Breuk of schade</h2><span class="bstatus" data-status="breuk"></span></div>
+    <div class="vraag"><div class="keuze" data-keuze="breuk.status"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div></div>
+    <div class="als" data-als="breuk.status=ja">
+      <label class="l" for="x-breuk">Wat, hoeveel, en hoe kwam het?</label><textarea id="x-breuk" data-veld="breuk.wat" placeholder="Bijv. 6 wijnglazen, tafel omgestoten door een gast"></textarea>
+      <label class="vinkje"><input type="checkbox" data-veld="breuk.fotos"><span>Ik voeg foto's toe aan de mail (dat kan pas in je mail-app, vlak voor het versturen).</span></label>
+    </div>
+  </section>
+
+  <!-- 09 OPMERKINGEN -->
+  <section class="blok" id="b-opm" aria-labelledby="h-opm">
+    <div class="blok-kop"><span class="nr">09</span><h2 id="h-opm">Opmerkingen</h2><span class="bstatus" data-status="opm"></span></div>
+    <div class="vraag"><span class="l">Klacht of ontevredenheid bij de klant?</span>
+      <div class="keuze" data-keuze="opm.klacht"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+      <div class="als" data-als="opm.klacht=ja"><label class="l" for="o-klacht">Wat, en van wie?</label><textarea id="o-klacht" data-veld="opm.klacht_wat"></textarea></div>
+    </div>
+    <div class="vraag"><span class="l">Iets toegezegd aan de klant?</span>
+      <div class="keuze" data-keuze="opm.toezegging"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+      <div class="als" data-als="opm.toezegging=ja"><label class="l" for="o-toez">Wat, en aan wie?</label><textarea id="o-toez" data-veld="opm.toezegging_wat" placeholder="Bijv. korting op de borrel, foto's nasturen"></textarea></div>
+    </div>
+    <div class="vraag"><label class="l" for="o-verhaal">Hoe ging het echt?</label>
+      <textarea class="groot" id="o-verhaal" data-veld="opm.verhaal" placeholder="Verloop van de avond, samenwerking met de locatie en leveranciers, wat je opviel, wat de volgende keer beter kan."></textarea>
+    </div>
+  </section>
+
+  <!-- 10 VERSTUREN -->
+  <section class="blok slot" id="b-versturen" aria-labelledby="h-versturen">
+    <div class="blok-kop"><span class="nr">10</span><h2 id="h-versturen">Nalopen en versturen</h2></div>
+    <ul class="controle" id="controle"></ul>
+    <p class="alles-ok" id="alles-ok" hidden>Alles staat erin. Klaar om te versturen.</p>
+    <label class="vinkje"><input type="checkbox" data-veld="af.akkoord"><span>Ik heb dit naar waarheid ingevuld, als <b id="akkoord-naam">eventmanager</b>.</span></label>
+    <div class="knoppen">
+      <a class="btn" id="mail-knop" href="#" aria-disabled="true">Open mail aan Tim</a>
+      <button type="button" class="btn twee" id="kopieer-knop">Kopieer de tekst</button>
+    </div>
+    <p class="naar">Gaat naar <b id="naar-adres">tim@erfgoedevents.nl</b>, en nergens anders heen. Breuk of schade? Voeg de foto's in je mail toe voordat je verstuurt.</p>
+    <div class="na-versturen" id="na-versturen" hidden>
+      <p><b>Je mail staat klaar.</b> Druk in je mail-app op versturen. Opende er niets? Kopieer de tekst en plak hem in een mail aan tim@erfgoedevents.nl.</p>
+      <button type="button" class="linkknop" id="nieuw-formulier">Klaar, nieuw formulier voor een volgend event</button>
+    </div>
+    <p class="naar" id="kopieer-ok" hidden></p>
+    <details class="voorbeeld"><summary>Bekijk de tekst die in de mail komt</summary><pre id="mail-voorbeeld"></pre></details>
+  </section>
+</main>
+
+<div class="balk" id="balk"><div class="wrap"><span class="tekst" id="balk-tekst">Nog niets ingevuld.</span><a class="btn" href="#b-versturen" id="balk-knop">Naar versturen</a></div></div>
+<footer><div class="wrap">Erfgoed Events · nacalculatie event, versie 1.0. Je concept blijft alleen op dit toestel bewaard tot je het wist.</div></footer>
+
+<script id="nc-data" type="application/json">{"versie":"1.0","naar":"tim@erfgoedevents.nl","event":null,"locaties":["Muiderslot","Fort bij Rijnauwen","Vliegbasis Soesterberg","Trompenburg Tuinen","Slot Zuylen","Grote Kerk Naarden","Royal Delft","Fort bij Abcoude","De Hollandsche Manege","Werkspoorkathedraal","Gevangenis Wolvenplein","Paleis Soestdijk"],"standaard_dranken":["Pils — Gulpener","Pils 0.0%","Fritz-Kola","Fritz-Kola zonder suiker","Fritz-Limo citroen","Appelsap van Schulp","Acqua Panna","San Pellegrino"]}</script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var D = {}; try { D = JSON.parse($('nc-data').textContent || '{}') || {}; } catch (e) { D = {}; }
+  var NAAR = 'tim@erfgoedevents.nl'; // vast (Tim 13-10-2026): de inzending gaat alleen naar dit adres
+  var EV = (D.event && typeof D.event === 'object') ? D.event : null;
+  var LOCATIES = Array.isArray(D.locaties) && D.locaties.length ? D.locaties : ['Muiderslot','Fort bij Rijnauwen','Vliegbasis Soesterberg','Trompenburg Tuinen','Slot Zuylen','Grote Kerk Naarden','Royal Delft','Fort bij Abcoude','De Hollandsche Manege','Werkspoorkathedraal','Gevangenis Wolvenplein','Paleis Soestdijk'];
+  var STANDAARD = Array.isArray(D.standaard_dranken) && D.standaard_dranken.length ? D.standaard_dranken : ['Pils — Gulpener','Pils 0.0%','Fritz-Kola','Fritz-Kola zonder suiker','Fritz-Limo citroen','Appelsap van Schulp','Acqua Panna','San Pellegrino'];
+  var EENHEDEN = ['fles','stuk','zak 5 L','liter'];
+  var KEY = 'ee-nacalculatie-v1-' + (EV && EV.ref ? String(EV.ref) : 'algemeen');
+  var EMKEY = 'ee-nacalculatie-em';
+  var DAGEN = ['zo','ma','di','wo','do','vr','za'];
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function iso(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function vandaag(){ var d = new Date(); if (d.getHours() < 6) d.setDate(d.getDate() - 1); return iso(d); }
+  function isNum(v){ return typeof v === 'number' && isFinite(v); }
+  function leeg(v){ return v == null || String(v).trim() === ''; }
+  function t(v){ return v == null ? '' : String(v).trim(); }
+  function lees(k){ try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function schrijf(k, v){ try { localStorage.setItem(k, v); } catch (e) {} }
+  function wis(k){ try { localStorage.removeItem(k); } catch (e) {} }
+  function heeftOpgave(){ return !!(EV && EV.opgave && (isNum(EV.opgave.diner) || isNum(EV.opgave.borrel) || isNum(EV.opgave.kinderen))); }
+  function opg(k){ return heeftOpgave() && isNum(EV.opgave[k]) ? EV.opgave[k] : 0; }
+
+  function nieuw(){
+    var s = {
+      v: 1,
+      event: { klant: EV ? t(EV.klant) : '', datum: EV && t(EV.datum) ? t(EV.datum) : vandaag(), locatie: EV ? t(EV.locatie) : '', em: EV && t(EV.eventmanager) ? t(EV.eventmanager) : (lees(EMKEY) || ''), mice: EV ? t(EV.mice) : '' },
+      _: null,
+      gasten: { zoals: heeftOpgave() ? 'ja' : null, diner: null, borrel: null, kinderen: null, crew: null, anders: 'nee', toelichting: '' },
+      tijd: { einde: '', later: 'nee', minuten: null, wie: null, waarom: '' },
+      drank: { door: '', om: '', wijnen: [], standaard: {}, overig: [], eigen: 'nee', eigen_fl: null, eigen_wat: '', retour: 'nee', retour_wat: '', bijz: '' },
+      extra: { status: 'nee', regels: [] },
+      gratis: { status: 'nee', wat: '' },
+      nietdoor: { status: 'nee', wat: '' },
+      breuk: { status: 'nee', wat: '', fotos: false },
+      opm: { klacht: 'nee', klacht_wat: '', toezegging: 'nee', toezegging_wat: '', verhaal: '' },
+      af: { akkoord: false },
+      meta: { gestart: new Date().toISOString(), geopend: null }
+    };
+    if (heeftOpgave()) { s.gasten.diner = opg('diner'); s.gasten.borrel = opg('borrel'); s.gasten.kinderen = opg('kinderen'); }
+    if (EV && Array.isArray(EV.wijnen) && EV.wijnen.length) {
+      s.drank.wijnen = EV.wijnen.map(function(w){ return { naam: t(w && w.naam), aantal: null, besteld: w && isNum(w.besteld) ? w.besteld : null, vast: true }; });
+    } else { s.drank.wijnen = [nieuweWijn(), nieuweWijn(), nieuweWijn()]; }
+    STANDAARD.forEach(function(n){ s.drank.standaard[n] = null; });
+    s.drank.overig = [nieuwOverig()];
+    s.drank.door = s.event.em;
+    delete s._;
+    s.extra.regels = [nieuweExtra()];
+    return s;
+  }
+  function nieuweWijn(){ return { naam: '', aantal: null, besteld: null }; }
+  function nieuwOverig(){ return { artikel: '', aantal: null, eenheid: 'fles' }; }
+  function nieuweExtra(){ return { wat: '', aantal: null, wie: '', tijd: '' }; }
+
+  var S = null;
+  (function laad(){
+    var raw = lees(KEY), s = null;
+    if (raw) { try { s = JSON.parse(raw); } catch (e) { s = null; } }
+    if (s && s.v === 1 && s.event) {
+      var basis = nieuw();
+      // nieuwe velden in een oud concept aanvullen, bestaande waarden houden
+      Object.keys(basis).forEach(function(k){ if (s[k] == null) s[k] = basis[k]; else if (typeof basis[k] === 'object' && !Array.isArray(basis[k])) { Object.keys(basis[k]).forEach(function(kk){ if (s[k][kk] === undefined) s[k][kk] = basis[k][kk]; }); } });
+      STANDAARD.forEach(function(n){ if (!(n in s.drank.standaard)) s.drank.standaard[n] = null; });
+      S = s;
+      var tijdstip = s.meta && s.meta.bewaard ? new Date(s.meta.bewaard) : null;
+      var wanneer = function(d){ return DAGEN[d.getDay()] + ' ' + pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + ' om ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+      var geopend = s.meta && s.meta.geopend ? new Date(s.meta.geopend) : null;
+      if (geopend && !isNaN(geopend)) {
+        $('concept-tekst').textContent = 'Dit formulier (' + (t(s.event.klant) || 'zonder naam') + ') heb je ' + wanneer(geopend) + ' al naar je mail gezet. Voor een volgend event begin je opnieuw; voor een correctie pas je het aan en verstuur je het nog eens.';
+        $('wis-start').textContent = 'Nieuw formulier';
+      } else {
+        $('concept-tekst').textContent = 'Je concept is teruggezet' + (tijdstip && !isNaN(tijdstip) ? ' (bewaard ' + wanneer(tijdstip) + ')' : '') + '. Het staat alleen op dit toestel.';
+      }
+      $('concept-melding').hidden = false;
+    } else { S = nieuw(); }
+  })();
+
+  // ---------- pad-helpers ----------
+  function get(path){ var o = S, p = path.split('.'); for (var i = 0; i < p.length; i++) { if (o == null) return undefined; o = o[p[i]]; } return o; }
+  function set(path, v){ var o = S, p = path.split('.'); for (var i = 0; i < p.length - 1; i++) { if (o[p[i]] == null) o[p[i]] = {}; o = o[p[i]]; } o[p[p.length - 1]] = v; }
+  function getal(v, geheel){ var x = String(v == null ? '' : v).trim().replace(',', '.'); if (x === '') return null; var n = geheel ? parseInt(x, 10) : parseFloat(x); if (!isFinite(n) || n < 0) return null; return geheel ? n : Math.round(n * 10) / 10; }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function minuten(hhmm){ var m = /^(\d{1,2}):(\d{2})$/.exec(t(hhmm)); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+  function verschil(afgesproken, werkelijk){ var a = minuten(afgesproken), w = minuten(werkelijk); if (a == null || w == null) return null; if (w < 6 * 60 && a >= 12 * 60) w += 24 * 60; if (a < 6 * 60 && w >= 12 * 60) a += 24 * 60; return w - a; }
+  function datumNL(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t(s)); if (!m) return t(s); var d = new Date(+m[1], +m[2] - 1, +m[3]); return DAGEN[d.getDay()] + ' ' + m[3] + '-' + m[2] + '-' + m[1]; }
+  function nl(n){ return String(n).replace('.', ','); }
+  function datumKort(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t(s)); return m ? m[3] + '-' + m[2] + '-' + m[1] : t(s); }
+
+  // ---------- opbouw ----------
+  function bouwStatisch(){
+    Array.prototype.forEach.call(document.querySelectorAll('[data-keuze]'), function(g){ g.setAttribute('role', 'group'); var vr = g.closest('.vraag'), lab = vr && vr.querySelector('.l'); if (lab) { if (!lab.id) lab.id = 'lbl-' + g.getAttribute('data-keuze').replace(/\./g, '-'); g.setAttribute('aria-labelledby', lab.id); } else { var blok = g.closest('.blok'), h = blok && blok.querySelector('h2'); if (h) g.setAttribute('aria-labelledby', h.id); } });
+    var dl = $('locaties'); dl.innerHTML = LOCATIES.map(function(l){ return '<option value="' + esc(l) + '"></option>'; }).join('');
+    $('naar-adres').textContent = NAAR;
+    if (EV) {
+      var klant = t(EV.klant);
+      if (klant) {
+        var h = $('titel'); h.textContent = 'Nacalculatie ';
+        var em = document.createElement('em'); em.textContent = klant + '.'; h.appendChild(em);
+        document.title = 'Nacalculatie · ' + klant + (t(EV.datum) ? ' · ' + datumKort(EV.datum) : '') + ' · Erfgoed Events';
+      }
+      var rijen = [];
+      if (t(EV.datum) || t(EV.locatie)) rijen.push(['Event', [datumNL(EV.datum), t(EV.locatie)].filter(Boolean).join(' · ')]);
+      if (heeftOpgave()) rijen.push(['Opgave', opgaveTekst()]);
+      if (t(EV.eindtijd)) rijen.push(['Eindtijd', t(EV.eindtijd) + (t(EV.eindtijd_locatie) ? ' (locatie uiterlijk ' + t(EV.eindtijd_locatie) + ')' : '')]);
+      if (t(EV.drank_afspraak)) rijen.push(['Drank', t(EV.drank_afspraak)]);
+      if (Array.isArray(EV.afgesproken_extra) && EV.afgesproken_extra.length) rijen.push(['Ook afgesproken', EV.afgesproken_extra.map(t).filter(Boolean).join(' · ')]);
+      if (t(EV.mice)) rijen.push(['MICE', t(EV.mice)]);
+      if (rijen.length) { $('afspraak-lijst').innerHTML = rijen.map(function(r){ return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join(''); $('afspraak').hidden = false; }
+      if (t(EV.eindtijd)) { var er = $('eind-ref'); er.innerHTML = 'Afgesproken: <b>' + esc(t(EV.eindtijd)) + '</b>' + (t(EV.eindtijd_locatie) ? ' · locatie uiterlijk <b>' + esc(t(EV.eindtijd_locatie)) + '</b>' : ''); er.hidden = false; }
+    }
+    if (heeftOpgave()) { $('gasten-met-opgave').hidden = false; $('gasten-zonder-opgave').hidden = true; $('opgave-ref').innerHTML = 'Opgave vooraf: <b>' + esc(opgaveTekst()) + '</b>'; }
+    else { $('gasten-met-opgave').hidden = true; $('gasten-zonder-opgave').hidden = false; }
+    // inputs met twee varianten (met/zonder opgave): alleen de zichtbare doet mee
+    Array.prototype.forEach.call(document.querySelectorAll('#gasten-met-opgave [data-veld], #gasten-zonder-opgave [data-veld]'), function(el){ var binnen = el.closest(heeftOpgave() ? '#gasten-met-opgave' : '#gasten-zonder-opgave'); if (!binnen) el.disabled = true; });
+  }
+  function opgaveTekst(){ var o = EV.opgave, d = []; d.push('diner ' + (isNum(o.diner) ? o.diner : 0)); if (isNum(o.borrel) && o.borrel) d.push('alleen borrel ' + o.borrel); if (isNum(o.kinderen) && o.kinderen) d.push('kinderen ' + o.kinderen); return d.join(' · '); }
+
+  function teller(veld, id, geheel, label){
+    var veldHtml = geheel
+      ? '<input type="number" inputmode="numeric" min="0" step="1"'
+      : '<input type="text" inputmode="decimal" autocomplete="off" data-getal';
+    return '<div class="teller"><button type="button" data-stap="-1" aria-label="min">−</button>' + veldHtml + (id ? ' id="' + id + '"' : '') + ' data-veld="' + veld + '"' + (geheel ? ' data-geheel' : '') + (label ? ' aria-label="' + esc(label) + '"' : '') + '><button type="button" data-stap="1" aria-label="plus">+</button></div>';
+  }
+  function renderLijsten(){
+    $('lijst-wijnen').innerHTML = S.drank.wijnen.map(function(w, i){
+      var b = isNum(w.besteld) ? '<p class="besteld" data-besteld="' + i + '">Besteld: ' + w.besteld + ' fl</p>' : '';
+      return '<div class="rij wijn"><input type="text" data-veld="drank.wijnen.' + i + '.naam" placeholder="Naam op de fles" aria-label="Wijn ' + (i + 1) + ', naam" autocomplete="off">' + teller('drank.wijnen.' + i + '.aantal', '', true, 'Wijn ' + (i + 1) + ', aantal flessen') + '<button type="button" class="weg" data-weg="wijnen.' + i + '" aria-label="Regel weghalen">×</button>' + b + '</div>';
+    }).join('');
+    $('lijst-standaard').innerHTML = STANDAARD.map(function(n, i){
+      return '<div class="rij vast"><span class="naam" id="std-' + i + '">' + esc(n) + '</span>' + teller('drank.standaard.' + n.replace(/\./g, '․'), '', true, n + ', aantal') + '</div>';
+    }).join('');
+    $('lijst-overig').innerHTML = S.drank.overig.map(function(r, i){
+      return '<div class="rij overig"><input type="text" data-veld="drank.overig.' + i + '.artikel" placeholder="Artikel" aria-label="Overig ' + (i + 1) + ', artikel" autocomplete="off">' + teller('drank.overig.' + i + '.aantal', '', false, 'Overig ' + (i + 1) + ', aantal') + '<select data-veld="drank.overig.' + i + '.eenheid" aria-label="Eenheid">' + EENHEDEN.map(function(e){ return '<option' + (r.eenheid === e ? ' selected' : '') + '>' + e + '</option>'; }).join('') + '</select><button type="button" class="weg" data-weg="overig.' + i + '" aria-label="Regel weghalen">×</button></div>';
+    }).join('');
+    $('lijst-extra').innerHTML = S.extra.regels.map(function(r, i){
+      return '<div class="rij extra"><span class="klein-label">Wat</span><input type="text" data-veld="extra.regels.' + i + '.wat" placeholder="Wat" aria-label="Extra ' + (i + 1) + ', wat" autocomplete="off"><span class="klein-label">Aantal</span>' + teller('extra.regels.' + i + '.aantal', '', false, 'Extra ' + (i + 1) + ', aantal') + '<span class="klein-label">Wie van de klant vroeg het</span><input type="text" data-veld="extra.regels.' + i + '.wie" placeholder="Wie vroeg het" aria-label="Extra ' + (i + 1) + ', wie van de klant" autocomplete="off"><span class="klein-label">Hoe laat</span><input type="time" data-veld="extra.regels.' + i + '.tijd" aria-label="Extra ' + (i + 1) + ', hoe laat"><button type="button" class="weg" data-weg="extra.' + i + '" aria-label="Regel weghalen">×</button></div>';
+    }).join('');
+    vulVelden(document);
+  }
+  // standaardnamen bevatten een punt (Pils 0.0%): in het pad vervangen door een ander teken
+  function padNaarSleutel(path){ return path.replace(/․/g, '.'); }
+  function getVeld(path){ var p = path.split('.'); if (p[0] === 'drank' && p[1] === 'standaard') return S.drank.standaard[padNaarSleutel(p.slice(2).join('.'))]; return get(path); }
+  function setVeld(path, v){ var p = path.split('.'); if (p[0] === 'drank' && p[1] === 'standaard') { S.drank.standaard[padNaarSleutel(p.slice(2).join('.'))] = v; return; } set(path, v); }
+
+  function vulVelden(root){
+    Array.prototype.forEach.call(root.querySelectorAll('[data-veld]'), function(el){
+      var v = getVeld(el.getAttribute('data-veld'));
+      if (el.type === 'checkbox') el.checked = !!v;
+      else el.value = v == null ? '' : v;
+    });
+  }
+  function zetKeuzes(){
+    Array.prototype.forEach.call(document.querySelectorAll('[data-keuze]'), function(g){
+      var v = get(g.getAttribute('data-keuze'));
+      Array.prototype.forEach.call(g.querySelectorAll('button[data-w]'), function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-w') === v)); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-als]'), function(el){
+      var r = el.getAttribute('data-als').split('='); el.hidden = get(r[0]) !== r[1];
+    });
+  }
+
+  // ---------- controles (dezelfde lijst loopt de verwerkingstaak na) ----------
+  function controles(){
+    var c = [], e = S.event;
+    function add(niveau, blok, tekst){ c.push({ niveau: niveau, blok: blok, tekst: tekst }); }
+    if (leeg(e.klant)) add('nodig', 'event', 'Naam van het event of de klant ontbreekt.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t(e.datum))) add('nodig', 'event', 'Datum ontbreekt.');
+    else { var dd = new Date(e.datum + 'T12:00:00'), nu = new Date(); var dagen = Math.round((nu - dd) / 864e5); if (dagen < -1) add('letop', 'event', 'De datum ligt in de toekomst. Klopt ' + datumNL(e.datum) + '?'); else if (dagen > 14) add('tip', 'event', 'Ingevuld ' + dagen + ' dagen na het event. Prima, maar zeg het in je verhaal als je iets niet meer precies weet.'); }
+    if (leeg(e.locatie)) add('nodig', 'event', 'Locatie ontbreekt.');
+    if (leeg(e.em)) add('nodig', 'event', 'Je naam als eventmanager ontbreekt.');
+
+    var g = S.gasten;
+    if (heeftOpgave()) {
+      if (g.zoals === 'nee') {
+        var gelijk = (g.diner || 0) === opg('diner') && (g.borrel || 0) === opg('borrel') && (g.kinderen || 0) === opg('kinderen');
+        if (gelijk) add('letop', 'gasten', 'Je koos "anders", maar de aantallen zijn gelijk aan de opgave. Pas ze aan of kies "zoals opgegeven".');
+        if (leeg(g.toelichting)) add('letop', 'gasten', 'Gasten anders dan de opgave: schrijf kort wat er anders was.');
+      } else if (g.zoals !== 'ja') add('letop', 'gasten', 'Kies of de opgave klopte.');
+    } else {
+      if (!isNum(g.diner) && !isNum(g.borrel)) add('letop', 'gasten', 'Vul het aantal gasten in (diner of alleen borrel).');
+      if (g.anders === 'ja' && leeg(g.toelichting)) add('letop', 'gasten', 'Je koos "anders dan de opgave": schrijf wat de opgave was en wat er anders was.');
+    }
+
+    var tj = S.tijd, uit = EV && t(EV.eindtijd) && t(tj.einde) ? verschil(EV.eindtijd, tj.einde) : null;
+    if (leeg(tj.einde)) add('tip', 'tijd', 'Hoe laat was het programma afgelopen? Handig voor de nacalculatie en voor volgende keer.');
+    if (uit != null && uit >= 10 && tj.later !== 'ja') add('letop', 'tijd', 'Volgens de tijden liep het ' + uit + ' minuten uit (afgesproken ' + t(EV.eindtijd) + ', afgelopen ' + t(tj.einde) + '). Klopt "nee"?');
+    if (EV && t(EV.eindtijd_locatie) && t(tj.einde)) { var over = verschil(EV.eindtijd_locatie, tj.einde); if (over != null && over > 0) add('letop', 'tijd', 'Afgelopen na de eindtijd van de locatie (' + t(EV.eindtijd_locatie) + '). Wie gaf daar toestemming voor? Zet het bij "waarom".'); }
+    if (tj.later === 'ja') {
+      if (!isNum(tj.minuten) || tj.minuten <= 0) add('letop', 'tijd', 'Uitloop: hoeveel minuten?');
+      if (!tj.wie) add('letop', 'tijd', 'Uitloop: wie vroeg erom? Nodig om te bepalen of het meerwerk is.');
+      if (leeg(tj.waarom)) add('letop', 'tijd', 'Uitloop: waarom liep het uit?');
+      if (uit != null && isNum(tj.minuten) && Math.abs(uit - tj.minuten) >= 15) add('tip', 'tijd', 'Je schrijft ' + tj.minuten + ' minuten uitloop; volgens de tijden is het ' + uit + '. Klopt dat?');
+    }
+
+    var dr = S.drank, geteld = 0;
+    var iets = function(){ return dr.wijnen.some(function(x){ return isNum(x.aantal); }) || Object.keys(dr.standaard).some(function(k){ return isNum(dr.standaard[k]); }) || dr.overig.some(function(x){ return isNum(x.aantal); }); };
+    dr.wijnen.forEach(function(w, i){
+      if (isNum(w.aantal)) geteld++;
+      if (!leeg(w.naam) && !isNum(w.aantal) && !w.vast) add('letop', 'drank', 'Wijn "' + t(w.naam) + '": aantal flessen ontbreekt.');
+      if (w.vast && !isNum(w.aantal) && iets()) add('letop', 'drank', '"' + t(w.naam) + '" stond op de bestellijst maar is niet geteld. Vul 0 in als er niets van geschonken is.');
+      if (leeg(w.naam) && isNum(w.aantal)) add('letop', 'drank', 'Wijnregel ' + (i + 1) + ': ' + w.aantal + ' flessen, maar welke wijn?');
+      if (isNum(w.besteld) && isNum(w.aantal) && w.aantal > w.besteld) add('letop', 'drank', '"' + t(w.naam) + '": ' + w.aantal + ' flessen verbruikt, ' + w.besteld + ' besteld. Klopt de telling, of is er bijgehaald?');
+    });
+    Object.keys(dr.standaard).forEach(function(k){ if (isNum(dr.standaard[k])) geteld++; });
+    dr.overig.forEach(function(r){ if (isNum(r.aantal)) geteld++; if (!leeg(r.artikel) && !isNum(r.aantal)) add('letop', 'drank', 'Overig "' + t(r.artikel) + '": aantal ontbreekt.'); if (leeg(r.artikel) && isNum(r.aantal)) add('letop', 'drank', 'Overig: ' + nl(r.aantal) + ' ' + r.eenheid + ', maar welk artikel?'); });
+    if (!geteld) add('letop', 'drank', 'De tellijst is nog leeg. Niets geschonken, of nog niet geteld?');
+    if (geteld && leeg(dr.door)) add('tip', 'drank', 'Wie heeft geteld?');
+    if (dr.eigen === 'ja' && !isNum(dr.eigen_fl)) add('letop', 'drank', 'Eigen drank van de klant: hoeveel flessen?');
+    if (dr.retour === 'ja' && leeg(dr.retour_wat)) add('letop', 'drank', 'Drank retour naar de klant: wat en hoeveel?');
+
+    if (S.extra.status === 'ja') {
+      var echte = S.extra.regels.filter(function(r){ return !leeg(r.wat) || isNum(r.aantal) || !leeg(r.wie); });
+      if (!echte.length) add('letop', 'extra', 'Je koos "extra besteld" maar vulde nog niets in.');
+      echte.forEach(function(r){ var wat = t(r.wat) || 'regel zonder omschrijving'; var mist = []; if (leeg(r.wat)) mist.push('wat'); if (!isNum(r.aantal)) mist.push('aantal'); if (leeg(r.wie)) mist.push('wie van de klant'); if (leeg(r.tijd)) mist.push('hoe laat'); if (mist.length) add('letop', 'extra', 'Extra besteld "' + wat + '": ' + mist.join(', ') + ' ontbreekt. Nodig voor de factuur.'); });
+    }
+    if (S.gratis.status === 'ja' && leeg(S.gratis.wat)) add('letop', 'gratis', 'Kosteloos weggegeven: wat en waarom?');
+    if (S.nietdoor.status === 'ja' && leeg(S.nietdoor.wat)) add('letop', 'nietdoor', 'Niet doorgegaan: wat, en waarom niet?');
+    if (S.breuk.status === 'ja') { if (leeg(S.breuk.wat)) add('letop', 'breuk', 'Breuk of schade: wat, hoeveel en hoe?'); if (!S.breuk.fotos) add('tip', 'breuk', 'Breuk of schade: voeg foto\'s toe aan de mail als je die hebt.'); }
+    if (S.opm.klacht === 'ja' && leeg(S.opm.klacht_wat)) add('letop', 'opm', 'Klacht: wat was er, en van wie?');
+    if (S.opm.toezegging === 'ja' && leeg(S.opm.toezegging_wat)) add('letop', 'opm', 'Toezegging: wat is er toegezegd, en aan wie?');
+    if (leeg(S.opm.verhaal)) add('tip', 'opm', '"Hoe ging het echt" is nog leeg. Twee zinnen helpen al voor de evaluatie.');
+    if (!S.af.akkoord) add('nodig', 'versturen', 'Vink aan dat je het naar waarheid hebt ingevuld.');
+    return c;
+  }
+
+  // ---------- de mail ----------
+  function regels(){
+    var e = S.event, L = [], dr = S.drank, g = S.gasten, tj = S.tijd;
+    L.push('NACALCULATIE EVENT · ERFGOED EVENTS');
+    L.push('Klant / event: ' + t(e.klant));
+    L.push('Datum: ' + datumNL(e.datum));
+    L.push('Locatie: ' + t(e.locatie));
+    L.push('Eventmanager: ' + t(e.em) + (t(e.mice) ? ' · MICE: ' + t(e.mice) : ''));
+    L.push('');
+    L.push('GASTEN');
+    if (heeftOpgave()) {
+      L.push('Opgave vooraf: ' + opgaveTekst());
+      if (g.zoals === 'nee') { L.push('Werkelijk: diner ' + (g.diner || 0) + ' · alleen borrel ' + (g.borrel || 0) + ' · kinderen ' + (g.kinderen || 0)); L.push('Anders dan de opgave: ja' + (t(g.toelichting) ? '. ' + t(g.toelichting) : '')); }
+      else L.push('Werkelijk: zoals opgegeven');
+    } else {
+      L.push('Diner ' + (isNum(g.diner) ? g.diner : '?') + ' · alleen borrel ' + (isNum(g.borrel) ? g.borrel : 0) + ' · kinderen ' + (isNum(g.kinderen) ? g.kinderen : 0));
+      L.push('Anders dan de opgave vooraf: ' + (g.anders === 'ja' ? 'ja' + (t(g.toelichting) ? '. ' + t(g.toelichting) : '') : 'nee'));
+    }
+    L.push('Crew mee-gegeten: ' + (isNum(g.crew) ? g.crew : 0));
+    L.push('');
+    L.push('TIJD');
+    L.push('Programma afgelopen om: ' + (t(tj.einde) || 'niet ingevuld') + (EV && t(EV.eindtijd) ? ' (afgesproken ' + t(EV.eindtijd) + ')' : ''));
+    if (tj.later === 'ja') { L.push('Later dan afgesproken: ja, ' + (isNum(tj.minuten) ? tj.minuten + ' minuten' : 'aantal minuten niet ingevuld') + ' · gevraagd door: ' + (tj.wie || 'niet ingevuld')); L.push('Waarom: ' + (t(tj.waarom) || 'niet ingevuld')); }
+    else L.push('Later dan afgesproken: nee');
+    L.push('');
+    L.push('DRANK · TELLIJST' + (t(dr.door) || t(dr.om) ? ' (geteld' + (t(dr.door) ? ' door ' + t(dr.door) : '') + (t(dr.om) ? ' om ' + t(dr.om) : '') + ')' : ''));
+    var w = dr.wijnen.filter(function(x){ return !leeg(x.naam) || isNum(x.aantal); }).map(function(x){ return (t(x.naam) || 'wijn zonder naam') + ' ' + (isNum(x.aantal) ? x.aantal + ' fl' : 'niet geteld') + (isNum(x.besteld) ? ' (besteld ' + x.besteld + ')' : ''); });
+    L.push('Wijn en bubbels: ' + (w.length ? w.join(' · ') : 'niets ingevuld'));
+    var b = Object.keys(dr.standaard).filter(function(k){ return isNum(dr.standaard[k]) && dr.standaard[k] > 0; }).map(function(k){ return k + ' ' + dr.standaard[k]; });
+    L.push('Bier en fris: ' + (b.length ? b.join(' · ') : 'niets ingevuld'));
+    var o = dr.overig.filter(function(x){ return !leeg(x.artikel) || isNum(x.aantal); }).map(function(x){ return (t(x.artikel) || 'artikel zonder naam') + ' ' + (isNum(x.aantal) ? nl(x.aantal) + ' ' + x.eenheid : 'aantal niet ingevuld'); });
+    if (o.length) L.push('Overig: ' + o.join(' · '));
+    L.push('Eigen drank van de klant: ' + (dr.eigen === 'ja' ? 'ja, ' + (isNum(dr.eigen_fl) ? dr.eigen_fl + ' fl' : 'aantal niet ingevuld') + (t(dr.eigen_wat) ? ' (' + t(dr.eigen_wat) + ')' : '') : 'nee') + ' · Drank retour naar de klant: ' + (dr.retour === 'ja' ? 'ja, ' + (t(dr.retour_wat) || 'niet ingevuld') : 'nee'));
+    if (t(dr.bijz)) L.push('Bijzonderheden: ' + t(dr.bijz));
+    L.push('');
+    L.push('EXTRA BESTELD TIJDENS HET EVENT');
+    var ex = S.extra.status === 'ja' ? S.extra.regels.filter(function(r){ return !leeg(r.wat) || isNum(r.aantal) || !leeg(r.wie); }) : [];
+    if (ex.length) ex.forEach(function(r){ L.push('- ' + (isNum(r.aantal) ? nl(r.aantal) + ' × ' : '') + (t(r.wat) || 'niet omschreven') + ' · gevraagd door: ' + (t(r.wie) || 'niet ingevuld') + ' · ' + (t(r.tijd) || 'tijd niet ingevuld')); });
+    else L.push('Nee');
+    L.push('');
+    L.push('KOSTELOOS WEGGEGEVEN: ' + (S.gratis.status === 'ja' ? 'ja. ' + (t(S.gratis.wat) || 'niet ingevuld') : 'nee'));
+    L.push('NIET DOORGEGAAN: ' + (S.nietdoor.status === 'ja' ? 'ja. ' + (t(S.nietdoor.wat) || 'niet ingevuld') : 'nee'));
+    L.push('BREUK OF SCHADE: ' + (S.breuk.status === 'ja' ? 'ja. ' + (t(S.breuk.wat) || 'niet ingevuld') + (S.breuk.fotos ? " · foto's bij deze mail" : " · geen foto's") : 'nee'));
+    L.push('KLACHT OF ONTEVREDENHEID: ' + (S.opm.klacht === 'ja' ? 'ja. ' + (t(S.opm.klacht_wat) || 'niet ingevuld') : 'nee'));
+    L.push('IETS TOEGEZEGD AAN DE KLANT: ' + (S.opm.toezegging === 'ja' ? 'ja. ' + (t(S.opm.toezegging_wat) || 'niet ingevuld') : 'nee'));
+    L.push('');
+    L.push('HOE GING HET ECHT');
+    L.push(t(S.opm.verhaal) || 'niet ingevuld');
+    var open = controles().filter(function(x){ return x.niveau !== 'tip' && x.blok !== 'versturen'; });
+    if (open.length) { L.push(''); L.push('NOG OPEN BIJ VERSTUREN'); open.forEach(function(x){ L.push('- ' + x.tekst); }); }
+    L.push('');
+    L.push('Ingevuld door ' + (t(e.em) || '?') + (S.af.akkoord ? ', naar waarheid' : '') + ', ' + datumNL(iso(new Date())) + ' ' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()) + '.');
+    L.push('Ref: NC1 · ' + (EV && EV.ref ? EV.ref : 'algemeen') + ' · verstuurd via de nacalculatiepagina van Erfgoed Events');
+    return L;
+  }
+  function onderwerp(){ var e = S.event; return 'Nacalculatie event · ' + (t(e.klant) || '?') + ' · ' + (datumKort(e.datum) || '?') + ' · ' + (t(e.locatie) || '?'); }
+  function mailtekst(){ return regels().join('\n'); }
+  function mailto(){ return 'mailto:' + NAAR + '?subject=' + encodeURIComponent(onderwerp()) + '&body=' + encodeURIComponent(mailtekst().replace(/\n/g, '\r\n')); }
+
+  // ---------- weergave van status en controle ----------
+  var BLOKNAAM = { event: 'Event', gasten: 'Gasten', tijd: 'Tijd', drank: 'Drank', extra: 'Extra besteld', gratis: 'Kosteloos weggegeven', nietdoor: 'Niet doorgegaan', breuk: 'Breuk of schade', opm: 'Opmerkingen', versturen: 'Versturen' };
+  function werkBij(){
+    zetKeuzes();
+    var c = controles();
+    var nodig = c.filter(function(x){ return x.niveau === 'nodig'; }), letop = c.filter(function(x){ return x.niveau === 'letop'; });
+    var ul = $('controle');
+    ul.innerHTML = c.map(function(x, i){ var label = x.niveau === 'nodig' ? 'Nodig' : (x.niveau === 'letop' ? 'Na te lopen' : 'Tip'); return '<li class="' + x.niveau + '"><b>' + label + ' · ' + esc(BLOKNAAM[x.blok] || '') + '</b>' + esc(x.tekst) + (x.blok !== 'versturen' ? ' <button type="button" data-ga="b-' + x.blok + '">Ga erheen</button>' : '') + '</li>'; }).join('');
+    $('alles-ok').hidden = c.length > 0;
+    Object.keys(BLOKNAAM).forEach(function(b){
+      var el = document.querySelector('[data-status="' + b + '"]'); if (!el) return;
+      var n = c.filter(function(x){ return x.blok === b && x.niveau !== 'tip'; }).length;
+      el.textContent = n ? n + (n === 1 ? ' punt' : ' punten') : (blokIngevuld(b) ? 'ingevuld' : 'volgens afspraak');
+      el.classList.toggle('punt', !!n);
+    });
+    var knop = $('mail-knop');
+    if (nodig.length) { knop.setAttribute('aria-disabled', 'true'); knop.setAttribute('href', '#b-versturen'); }
+    else { knop.removeAttribute('aria-disabled'); knop.setAttribute('href', mailto()); }
+    $('akkoord-naam').textContent = t(S.event.em) || 'eventmanager';
+    $('mail-voorbeeld').textContent = 'Aan: ' + NAAR + '\nOnderwerp: ' + onderwerp() + '\n\n' + mailtekst();
+    var bt = $('balk-tekst');
+    if (nodig.length) bt.innerHTML = '<b>Nog nodig: ' + nodig.length + '</b>' + (letop.length ? ' · na te lopen: ' + letop.length : '');
+    else if (letop.length) bt.innerHTML = '<b>Klaar om te versturen</b> · nog ' + letop.length + ' ' + (letop.length === 1 ? 'punt' : 'punten') + ' om na te lopen';
+    else bt.innerHTML = '<b>Klaar om te versturen</b>';
+  }
+  function blokIngevuld(b){
+    var s = S;
+    switch (b) {
+      case 'event': return !leeg(s.event.klant);
+      case 'gasten': return heeftOpgave() ? s.gasten.zoals === 'nee' || isNum(s.gasten.crew) : (isNum(s.gasten.diner) || isNum(s.gasten.borrel));
+      case 'tijd': return !leeg(s.tijd.einde) || s.tijd.later === 'ja';
+      case 'drank': return s.drank.wijnen.some(function(w){ return isNum(w.aantal); }) || Object.keys(s.drank.standaard).some(function(k){ return isNum(s.drank.standaard[k]); });
+      case 'extra': return s.extra.status === 'ja';
+      case 'gratis': return s.gratis.status === 'ja';
+      case 'nietdoor': return s.nietdoor.status === 'ja';
+      case 'breuk': return s.breuk.status === 'ja';
+      case 'opm': return !leeg(s.opm.verhaal) || s.opm.klacht === 'ja' || s.opm.toezegging === 'ja';
+    }
+    return false;
+  }
+
+  var bewaarTimer = null, werkTimer = null, vorigeEm = S.event.em;
+  function bewaar(){ clearTimeout(bewaarTimer); bewaarTimer = setTimeout(function(){ S.meta.bewaard = new Date().toISOString(); schrijf(KEY, JSON.stringify(S)); if (!leeg(S.event.em)) schrijf(EMKEY, t(S.event.em)); }, 250); }
+  function later(){ clearTimeout(werkTimer); werkTimer = setTimeout(werkBij, 120); }
+
+  // ---------- gebeurtenissen ----------
+  document.addEventListener('input', function(ev){
+    var el = ev.target; if (!el || !el.hasAttribute || !el.hasAttribute('data-veld')) return;
+    var path = el.getAttribute('data-veld'), v;
+    if (el.type === 'checkbox') v = el.checked;
+    else if (el.type === 'number' || el.hasAttribute('data-getal')) v = getal(el.value, el.hasAttribute('data-geheel'));
+    else v = el.value;
+    setVeld(path, v);
+    if (path === 'event.em') { if (leeg(S.drank.door) || S.drank.door === vorigeEm) { S.drank.door = v; var dd = $('d-door'); if (dd) dd.value = v; } vorigeEm = v; }
+    if (/^drank\.wijnen\.\d+\.aantal$/.test(path)) { var i = +path.split('.')[2], wi = S.drank.wijnen[i], p = document.querySelector('[data-besteld="' + i + '"]'); if (p && wi) p.classList.toggle('te-veel', isNum(wi.aantal) && isNum(wi.besteld) && wi.aantal > wi.besteld); }
+    bewaar(); if (el.type === 'checkbox') werkBij(); else later();
+  });
+  document.addEventListener('change', function(ev){ var el = ev.target; if (el && el.tagName === 'SELECT' && el.hasAttribute('data-veld')) { setVeld(el.getAttribute('data-veld'), el.value); bewaar(); later(); } });
+  document.addEventListener('click', function(ev){
+    var el = ev.target.closest ? ev.target.closest('button, a') : null; if (!el) return;
+    if (el.parentNode && el.parentNode.hasAttribute && el.parentNode.hasAttribute('data-keuze') && el.hasAttribute('data-w')) {
+      var path = el.parentNode.getAttribute('data-keuze'), w = el.getAttribute('data-w');
+      var oud = get(path);
+      set(path, oud === w && !/^(gasten\.zoals|gasten\.anders|tijd\.later|drank\.(eigen|retour)|extra\.status|gratis\.status|nietdoor\.status|breuk\.status|opm\.(klacht|toezegging))$/.test(path) ? null : w);
+      if (path === 'tijd.later' && w === 'ja' && !isNum(S.tijd.minuten) && EV && t(EV.eindtijd) && t(S.tijd.einde)) { var u = verschil(EV.eindtijd, S.tijd.einde); if (u != null && u > 0) { S.tijd.minuten = u; vulVelden($('b-tijd')); } }
+      if (path === 'gasten.zoals' && w === 'nee' && heeftOpgave() && S.gasten.diner == null) { S.gasten.diner = opg('diner'); S.gasten.borrel = opg('borrel'); S.gasten.kinderen = opg('kinderen'); vulVelden($('b-gasten')); }
+      bewaar(); werkBij(); return;
+    }
+    if (el.hasAttribute('data-stap')) {
+      var inp = el.parentNode.querySelector('input'); if (!inp || inp.disabled) return;
+      var stap = +el.getAttribute('data-stap'), huidig = getal(inp.value, inp.hasAttribute('data-geheel'));
+      var nieuwW = Math.max(0, (huidig == null ? 0 : huidig) + stap);
+      if (huidig == null && stap < 0) nieuwW = 0;
+      inp.value = nieuwW; inp.dispatchEvent(new Event('input', { bubbles: true })); return;
+    }
+    if (el.hasAttribute('data-toevoegen')) {
+      var soort = el.getAttribute('data-toevoegen');
+      if (soort === 'wijnen') S.drank.wijnen.push(nieuweWijn());
+      if (soort === 'overig') S.drank.overig.push(nieuwOverig());
+      if (soort === 'extra') S.extra.regels.push(nieuweExtra());
+      renderLijsten(); bewaar(); werkBij();
+      var lijst = $('lijst-' + soort), laatste = lijst && lijst.lastElementChild; if (laatste) { var f = laatste.querySelector('input'); if (f) f.focus(); }
+      return;
+    }
+    if (el.hasAttribute('data-weg')) {
+      var d = el.getAttribute('data-weg').split('.'), idx = +d[1];
+      var arr = d[0] === 'wijnen' ? S.drank.wijnen : d[0] === 'overig' ? S.drank.overig : S.extra.regels;
+      arr.splice(idx, 1);
+      if (!arr.length) arr.push(d[0] === 'wijnen' ? nieuweWijn() : d[0] === 'overig' ? nieuwOverig() : nieuweExtra());
+      renderLijsten(); bewaar(); werkBij(); return;
+    }
+    if (el.hasAttribute('data-ga')) { var doel = $(el.getAttribute('data-ga')); if (doel) { doel.scrollIntoView({ behavior: 'smooth', block: 'start' }); var eerste = doel.querySelector('input:not([disabled]), textarea, button'); if (eerste) setTimeout(function(){ eerste.focus({ preventScroll: true }); }, 400); } return; }
+    if (el.id === 'balk-knop') { ev.preventDefault(); var c = controles(), n = c.filter(function(x){ return x.niveau === 'nodig' && x.blok !== 'versturen'; })[0]; var doelB = n ? $('b-' + n.blok) : $('b-versturen'); doelB.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (el.id === 'mail-knop') {
+      werkBij();
+      var eerstNodig = controles().filter(function(x){ return x.niveau === 'nodig'; })[0];
+      if (eerstNodig) { ev.preventDefault(); var dB = $(eerstNodig.blok === 'versturen' ? 'b-versturen' : 'b-' + eerstNodig.blok); dB.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      el.setAttribute('href', mailto());
+      S.meta.geopend = new Date().toISOString(); bewaar();
+      $('na-versturen').hidden = false;
+      return; // de link opent de mail-app zelf
+    }
+    if (el.id === 'kopieer-knop') {
+      var tekst = 'Aan: ' + NAAR + '\nOnderwerp: ' + onderwerp() + '\n\n' + mailtekst();
+      var klaar = function(){ var k = $('kopieer-ok'); k.hidden = false; k.innerHTML = '<b>Gekopieerd.</b> Plak de tekst in een nieuwe mail aan ' + esc(NAAR) + ' en neem het onderwerp over.'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tekst).then(klaar, function(){ fallbackKopie(tekst); klaar(); });
+      else { fallbackKopie(tekst); klaar(); }
+      return;
+    }
+    if (el.id === 'wis-start') { el.hidden = true; $('wis-zeker').hidden = false; return; }
+    if (el.id === 'wis-zeker' || el.id === 'nieuw-formulier') { wis(KEY); S = nieuw(); renderLijsten(); vulVelden(document); werkBij(); $('concept-melding').hidden = true; $('na-versturen').hidden = true; $('kopieer-ok').hidden = true; $('wis-start').hidden = false; $('wis-start').textContent = 'Wis en begin opnieuw'; $('wis-zeker').hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  });
+  function fallbackKopie(tekst){ var ta = document.createElement('textarea'); ta.value = tekst; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); }
+
+  bouwStatisch();
+  renderLijsten();
+  vulVelden(document);
+  werkBij();
+  window.__nc = { state: function(){ return S; }, mailtekst: mailtekst, onderwerp: onderwerp, mailto: mailto, controles: controles };
+})();
+</script>
+</body>
+</html>
