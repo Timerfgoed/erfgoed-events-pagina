@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <!--
   Erfgoed Events · Nacalculatie event (digitale versie van "Nacalculatie event" + "Tellijst dranken", pdf's 08-09-2026)
-  Template v1.0 · 13-10-2026 · bron en uitleg: templates/nacalculatie/README.md in de Hivemind.
+  Template v1.1 · 13-10-2026 (09 Evaluatie, link per event) · bron en uitleg: templates/nacalculatie/README.md in de Hivemind.
   Bouwen: python3 templates/nacalculatie/build.py (vult alleen het blok nc-data). Niet per pagina aan de opmaak sleutelen.
   Versturen = de mail-app van de eventmanager opent, gericht aan tim@erfgoedevents.nl (Tim 13-10-2026: nergens anders heen).
   Geen server, geen script, geen Notion; wat de pagina onthoudt staat alleen in de browser van de eventmanager (concept).
@@ -144,6 +144,18 @@
   .vinkje{display:flex;gap:12px;align-items:flex-start;margin-top:14px;cursor:pointer;font-size:.95rem}
   .vinkje input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--wine)}
 
+  .eval-lijst{display:grid;gap:12px;margin-top:14px}
+  .eval{border:1px solid var(--line);background:#fff;padding:12px 14px 14px;border-radius:var(--radius)}
+  .eval-kop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .eval h3{font-family:var(--display);font-weight:400;font-size:1.4rem;line-height:1.15;margin:0}
+  .eval .sub{display:block;font-family:var(--body);font-size:.84rem;color:var(--ink-soft);margin-top:2px}
+  .eval textarea{margin-top:10px;min-height:74px}
+  .eval.is-ok > .tekstvak{display:none}
+  .eval .vraag{margin-top:14px}
+  .perfect{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;cursor:pointer;padding:7px 14px;min-height:42px;border:1px solid var(--line-strong);border-radius:999px;background:#fff;color:var(--ink);user-select:none;-webkit-user-select:none}
+  .perfect input{width:18px;height:18px;margin:0;accent-color:var(--wine);flex:none}
+  .eval.is-ok .perfect{background:var(--wine);border-color:var(--wine);color:var(--paper)}
+  .vinkje.alles{margin-top:12px;padding:12px 14px;border:1px solid var(--line-strong);background:var(--paper-deep);border-radius:var(--radius);align-items:center}
   .slot{border-color:var(--line-strong)}
   .controle{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
   .controle li{padding:10px 12px 10px 14px;border-left:3px solid var(--line-strong);background:#fff;font-size:.93rem}
@@ -193,6 +205,7 @@
       <span class="l">Afgesproken (uit het draaiboek)</span>
       <dl id="afspraak-lijst"></dl>
     </div>
+    <div class="melding" id="link-melding" hidden><span>Deze link kon niet helemaal gelezen worden. Vul het event hieronder zelf in.</span></div>
     <div class="melding" id="concept-melding" hidden>
       <span id="concept-tekst">Je concept is bewaard op dit toestel.</span>
       <button type="button" class="linkknop" id="wis-start">Wis en begin opnieuw</button>
@@ -342,19 +355,44 @@
     </div>
   </section>
 
-  <!-- 09 OPMERKINGEN -->
-  <section class="blok" id="b-opm" aria-labelledby="h-opm">
-    <div class="blok-kop"><span class="nr">09</span><h2 id="h-opm">Opmerkingen</h2><span class="bstatus" data-status="opm"></span></div>
-    <div class="vraag"><span class="l">Klacht of ontevredenheid bij de klant?</span>
-      <div class="keuze" data-keuze="opm.klacht"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
-      <div class="als" data-als="opm.klacht=ja"><label class="l" for="o-klacht">Wat, en van wie?</label><textarea id="o-klacht" data-veld="opm.klacht_wat"></textarea></div>
-    </div>
-    <div class="vraag"><span class="l">Iets toegezegd aan de klant?</span>
-      <div class="keuze" data-keuze="opm.toezegging"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
-      <div class="als" data-als="opm.toezegging=ja"><label class="l" for="o-toez">Wat, en aan wie?</label><textarea id="o-toez" data-veld="opm.toezegging_wat" placeholder="Bijv. korting op de borrel, foto's nasturen"></textarea></div>
-    </div>
-    <div class="vraag"><label class="l" for="o-verhaal">Hoe ging het echt?</label>
-      <textarea class="groot" id="o-verhaal" data-veld="opm.verhaal" placeholder="Verloop van de avond, samenwerking met de locatie en leveranciers, wat je opviel, wat de volgende keer beter kan."></textarea>
+  <!-- 09 EVALUATIE (Tim 13-10-2026: per onderdeel leeg laten, of een vinkje "alles was perfect") -->
+  <section class="blok" id="b-eval" aria-labelledby="h-eval">
+    <div class="blok-kop"><span class="nr">09</span><h2 id="h-eval">Evaluatie</h2><span class="bstatus" data-status="eval"></span></div>
+    <p class="uitleg">Per onderdeel: vink aan dat alles perfect was, of schrijf kort wat opviel. Leeg laten mag ook.</p>
+    <label class="vinkje alles"><input type="checkbox" id="e-alles"><span><b>Alles was perfect</b>, op elk onderdeel</span></label>
+    <div class="eval-lijst">
+      <div class="eval" data-eval="personeel">
+        <div class="eval-kop"><h3 id="h-ev-personeel">Personeel</h3><label class="perfect"><input type="checkbox" data-veld="ev.personeel.ok" aria-describedby="h-ev-personeel"><span>Alles was perfect</span></label></div>
+        <div class="tekstvak"><textarea data-veld="ev.personeel.tekst" aria-labelledby="h-ev-personeel" placeholder="Bezetting, inzet, op tijd, samenwerking, wie viel op"></textarea></div>
+      </div>
+      <div class="eval" data-eval="locatie">
+        <div class="eval-kop"><h3 id="h-ev-locatie">Locatie</h3><label class="perfect"><input type="checkbox" data-veld="ev.locatie.ok" aria-describedby="h-ev-locatie"><span>Alles was perfect</span></label></div>
+        <div class="tekstvak"><textarea data-veld="ev.locatie.tekst" aria-labelledby="h-ev-locatie" placeholder="Toegang, opbouw en afbouw, contact met de locatie, ruimte, temperatuur, regels"></textarea></div>
+      </div>
+      <div class="eval" data-eval="keuken">
+        <div class="eval-kop"><h3 id="h-ev-keuken">Keuken</h3><label class="perfect"><input type="checkbox" data-veld="ev.keuken.ok" aria-describedby="h-ev-keuken"><span>Alles was perfect</span></label></div>
+        <div class="tekstvak"><textarea data-veld="ev.keuken.tekst" aria-labelledby="h-ev-keuken" placeholder="Timing van de gangen, kwaliteit, dieetwensen, afstemming met de bediening"></textarea></div>
+      </div>
+      <div class="eval" data-eval="inhuur">
+        <div class="eval-kop"><h3 id="h-ev-inhuur">Inhuur <span class="sub">Was alles ingehuurd wat nodig was?</span></h3><label class="perfect"><input type="checkbox" data-veld="ev.inhuur.ok" aria-describedby="h-ev-inhuur"><span>Alles was perfect</span></label></div>
+        <div class="tekstvak"><textarea data-veld="ev.inhuur.tekst" aria-labelledby="h-ev-inhuur" placeholder="Te veel of te weinig (glazen, borden, meubilair, linnen), levering en ophalen"></textarea></div>
+      </div>
+      <div class="eval" data-eval="klant">
+        <div class="eval-kop"><h3 id="h-ev-klant">Klant</h3><label class="perfect"><input type="checkbox" data-veld="ev.klant.ok" aria-describedby="h-ev-klant"><span>Alles was perfect</span></label></div>
+        <div class="tekstvak"><textarea data-veld="ev.klant.tekst" aria-labelledby="h-ev-klant" placeholder="Tevredenheid, wensen op de dag, contact met de contactpersoon"></textarea></div>
+        <div class="vraag"><span class="l">Klacht of ontevredenheid bij de klant?</span>
+          <div class="keuze" data-keuze="ev.klacht"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+          <div class="als" data-als="ev.klacht=ja"><label class="l" for="o-klacht">Wat, en van wie?</label><textarea id="o-klacht" data-veld="ev.klacht_wat"></textarea></div>
+        </div>
+        <div class="vraag"><span class="l">Iets toegezegd aan de klant?</span>
+          <div class="keuze" data-keuze="ev.toezegging"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div>
+          <div class="als" data-als="ev.toezegging=ja"><label class="l" for="o-toez">Wat, en aan wie?</label><textarea id="o-toez" data-veld="ev.toezegging_wat" placeholder="Bijv. korting op de borrel, foto's nasturen"></textarea></div>
+        </div>
+      </div>
+      <div class="eval vrij">
+        <h3 id="h-ev-bijz">Bijzonderheden die opvielen</h3>
+        <textarea data-veld="ev.bijzonderheden" aria-labelledby="h-ev-bijz" placeholder="Wat viel verder op? Wat kan de volgende keer anders?"></textarea>
+      </div>
     </div>
   </section>
 
@@ -379,7 +417,7 @@
 </main>
 
 <div class="balk" id="balk"><div class="wrap"><span class="tekst" id="balk-tekst">Nog niets ingevuld.</span><a class="btn" href="#b-versturen" id="balk-knop">Naar versturen</a></div></div>
-<footer><div class="wrap">Erfgoed Events · nacalculatie event, versie 1.0. Je concept blijft alleen op dit toestel bewaard tot je het wist.</div></footer>
+<footer><div class="wrap">Erfgoed Events · nacalculatie event, versie 1.1. Je concept blijft alleen op dit toestel bewaard tot je het wist.</div></footer>
 
 <script id="nc-data" type="application/json">{"versie":"1.1","naar":"tim@erfgoedevents.nl","event":{"klant":"Opening tentoonstelling & boekpresentatie","datum":"2026-10-20","locatie":"Slot Zuylen","ref":"2026-10-20-slot-zuylen"},"locaties":["Muiderslot","Fort bij Rijnauwen","Vliegbasis Soesterberg","Trompenburg Tuinen","Slot Zuylen","Grote Kerk Naarden","Royal Delft","Fort bij Abcoude","De Hollandsche Manege","Werkspoorkathedraal","Gevangenis Wolvenplein","Paleis Soestdijk"],"standaard_dranken":["Pils — Gulpener","Pils 0.0%","Fritz-Kola","Fritz-Kola zonder suiker","Fritz-Limo citroen","Appelsap van Schulp","Acqua Panna","San Pellegrino"]}</script>
 <script>
@@ -392,7 +430,9 @@
   var LOCATIES = Array.isArray(D.locaties) && D.locaties.length ? D.locaties : ['Muiderslot','Fort bij Rijnauwen','Vliegbasis Soesterberg','Trompenburg Tuinen','Slot Zuylen','Grote Kerk Naarden','Royal Delft','Fort bij Abcoude','De Hollandsche Manege','Werkspoorkathedraal','Gevangenis Wolvenplein','Paleis Soestdijk'];
   var STANDAARD = Array.isArray(D.standaard_dranken) && D.standaard_dranken.length ? D.standaard_dranken : ['Pils — Gulpener','Pils 0.0%','Fritz-Kola','Fritz-Kola zonder suiker','Fritz-Limo citroen','Appelsap van Schulp','Acqua Panna','San Pellegrino'];
   var EENHEDEN = ['fles','stuk','zak 5 L','liter'];
-  var KEY = 'ee-nacalculatie-v1-' + (EV && EV.ref ? String(EV.ref) : 'algemeen');
+  var KEY = '';
+  var THEMAS = ['personeel', 'locatie', 'keuken', 'inhuur', 'klant'];
+  var THEMANAAM = { personeel: 'Personeel', locatie: 'Locatie', keuken: 'Keuken', inhuur: 'Inhuur (alles ingehuurd wat nodig was?)', klant: 'Klant' };
   var EMKEY = 'ee-nacalculatie-em';
   var DAGEN = ['zo','ma','di','wo','do','vr','za'];
 
@@ -410,7 +450,7 @@
 
   function nieuw(){
     var s = {
-      v: 1,
+      v: 2,
       event: { klant: EV ? t(EV.klant) : '', datum: EV && t(EV.datum) ? t(EV.datum) : vandaag(), locatie: EV ? t(EV.locatie) : '', em: EV && t(EV.eventmanager) ? t(EV.eventmanager) : (lees(EMKEY) || ''), mice: EV ? t(EV.mice) : '' },
       _: null,
       gasten: { zoals: heeftOpgave() ? 'ja' : null, diner: null, borrel: null, kinderen: null, crew: null, anders: 'nee', toelichting: '' },
@@ -420,7 +460,7 @@
       gratis: { status: 'nee', wat: '' },
       nietdoor: { status: 'nee', wat: '' },
       breuk: { status: 'nee', wat: '', fotos: false },
-      opm: { klacht: 'nee', klacht_wat: '', toezegging: 'nee', toezegging_wat: '', verhaal: '' },
+      ev: nieuweEvaluatie(),
       af: { akkoord: false },
       meta: { gestart: new Date().toISOString(), geopend: null }
     };
@@ -435,15 +475,19 @@
     s.extra.regels = [nieuweExtra()];
     return s;
   }
+  function nieuweEvaluatie(){ var e = { klacht: 'nee', klacht_wat: '', toezegging: 'nee', toezegging_wat: '', bijzonderheden: '' }; THEMAS.forEach(function(k){ e[k] = { ok: false, tekst: '' }; }); return e; }
   function nieuweWijn(){ return { naam: '', aantal: null, besteld: null }; }
   function nieuwOverig(){ return { artikel: '', aantal: null, eenheid: 'fles' }; }
   function nieuweExtra(){ return { wat: '', aantal: null, wie: '', tijd: '' }; }
 
   var S = null;
-  (function laad(){
+  function laad(){
     var raw = lees(KEY), s = null;
     if (raw) { try { s = JSON.parse(raw); } catch (e) { s = null; } }
-    if (s && s.v === 1 && s.event) {
+    if (s && (s.v === 1 || s.v === 2) && s.event) {
+      if (s.v === 1) { var o = s.opm || {}; s.ev = nieuweEvaluatie(); s.ev.klacht = o.klacht === 'ja' ? 'ja' : 'nee'; s.ev.klacht_wat = o.klacht_wat || ''; s.ev.toezegging = o.toezegging === 'ja' ? 'ja' : 'nee'; s.ev.toezegging_wat = o.toezegging_wat || ''; s.ev.bijzonderheden = o.verhaal || ''; delete s.opm; s.v = 2; }
+      if (!s.ev) s.ev = nieuweEvaluatie();
+      THEMAS.forEach(function(k){ if (!s.ev[k] || typeof s.ev[k] !== 'object') s.ev[k] = { ok: false, tekst: '' }; });
       var basis = nieuw();
       // nieuwe velden in een oud concept aanvullen, bestaande waarden houden
       Object.keys(basis).forEach(function(k){ if (s[k] == null) s[k] = basis[k]; else if (typeof basis[k] === 'object' && !Array.isArray(basis[k])) { Object.keys(basis[k]).forEach(function(kk){ if (s[k][kk] === undefined) s[k][kk] = basis[k][kk]; }); } });
@@ -460,7 +504,7 @@
       }
       $('concept-melding').hidden = false;
     } else { S = nieuw(); }
-  })();
+  }
 
   // ---------- pad-helpers ----------
   function get(path){ var o = S, p = path.split('.'); for (var i = 0; i < p.length; i++) { if (o == null) return undefined; o = o[p[i]]; } return o; }
@@ -603,12 +647,17 @@
     if (S.gratis.status === 'ja' && leeg(S.gratis.wat)) add('letop', 'gratis', 'Kosteloos weggegeven: wat en waarom?');
     if (S.nietdoor.status === 'ja' && leeg(S.nietdoor.wat)) add('letop', 'nietdoor', 'Niet doorgegaan: wat, en waarom niet?');
     if (S.breuk.status === 'ja') { if (leeg(S.breuk.wat)) add('letop', 'breuk', 'Breuk of schade: wat, hoeveel en hoe?'); if (!S.breuk.fotos) add('tip', 'breuk', 'Breuk of schade: voeg foto\'s toe aan de mail als je die hebt.'); }
-    if (S.opm.klacht === 'ja' && leeg(S.opm.klacht_wat)) add('letop', 'opm', 'Klacht: wat was er, en van wie?');
-    if (S.opm.toezegging === 'ja' && leeg(S.opm.toezegging_wat)) add('letop', 'opm', 'Toezegging: wat is er toegezegd, en aan wie?');
-    if (leeg(S.opm.verhaal)) add('tip', 'opm', '"Hoe ging het echt" is nog leeg. Twee zinnen helpen al voor de evaluatie.');
+    var E = S.ev;
+    if (E.klacht === 'ja' && leeg(E.klacht_wat)) add('letop', 'eval', 'Klacht: wat was er, en van wie?');
+    if (E.toezegging === 'ja' && leeg(E.toezegging_wat)) add('letop', 'eval', 'Toezegging: wat is er toegezegd, en aan wie?');
+    if (E.klant.ok && E.klacht === 'ja') add('letop', 'eval', 'Bij Klant staat "alles was perfect", maar er is ook een klacht. Klopt dat?');
+    if (evaluatieLeeg()) add('tip', 'eval', 'De evaluatie is leeg. Ging alles goed? Eén vinkje "Alles was perfect" is genoeg.');
     if (!S.af.akkoord) add('nodig', 'versturen', 'Vink aan dat je het naar waarheid hebt ingevuld.');
     return c;
   }
+
+  function evaluatieLeeg(){ var E = S.ev; return THEMAS.every(function(k){ return !E[k].ok && leeg(E[k].tekst); }) && leeg(E.bijzonderheden) && E.klacht !== 'ja' && E.toezegging !== 'ja'; }
+  function allesPerfect(){ return THEMAS.every(function(k){ return S.ev[k].ok; }); }
 
   // ---------- de mail ----------
   function regels(){
@@ -653,16 +702,18 @@
     L.push('KOSTELOOS WEGGEGEVEN: ' + (S.gratis.status === 'ja' ? 'ja. ' + (t(S.gratis.wat) || 'niet ingevuld') : 'nee'));
     L.push('NIET DOORGEGAAN: ' + (S.nietdoor.status === 'ja' ? 'ja. ' + (t(S.nietdoor.wat) || 'niet ingevuld') : 'nee'));
     L.push('BREUK OF SCHADE: ' + (S.breuk.status === 'ja' ? 'ja. ' + (t(S.breuk.wat) || 'niet ingevuld') + (S.breuk.fotos ? " · foto's bij deze mail" : " · geen foto's") : 'nee'));
-    L.push('KLACHT OF ONTEVREDENHEID: ' + (S.opm.klacht === 'ja' ? 'ja. ' + (t(S.opm.klacht_wat) || 'niet ingevuld') : 'nee'));
-    L.push('IETS TOEGEZEGD AAN DE KLANT: ' + (S.opm.toezegging === 'ja' ? 'ja. ' + (t(S.opm.toezegging_wat) || 'niet ingevuld') : 'nee'));
     L.push('');
-    L.push('HOE GING HET ECHT');
-    L.push(t(S.opm.verhaal) || 'niet ingevuld');
+    var E = S.ev;
+    L.push('EVALUATIE' + (allesPerfect() ? ' (alles was perfect)' : ''));
+    THEMAS.forEach(function(k){ var x = E[k]; L.push(THEMANAAM[k] + ': ' + (x.ok ? 'alles was perfect' + (t(x.tekst) ? '. ' + t(x.tekst) : '') : (t(x.tekst) || 'niet ingevuld'))); });
+    L.push('Klacht of ontevredenheid bij de klant: ' + (E.klacht === 'ja' ? 'ja. ' + (t(E.klacht_wat) || 'niet ingevuld') : 'nee'));
+    L.push('Iets toegezegd aan de klant: ' + (E.toezegging === 'ja' ? 'ja. ' + (t(E.toezegging_wat) || 'niet ingevuld') : 'nee'));
+    L.push('Bijzonderheden die opvielen: ' + (t(E.bijzonderheden) || 'geen'));
     var open = controles().filter(function(x){ return x.niveau !== 'tip' && x.blok !== 'versturen'; });
     if (open.length) { L.push(''); L.push('NOG OPEN BIJ VERSTUREN'); open.forEach(function(x){ L.push('- ' + x.tekst); }); }
     L.push('');
     L.push('Ingevuld door ' + (t(e.em) || '?') + (S.af.akkoord ? ', naar waarheid' : '') + ', ' + datumNL(iso(new Date())) + ' ' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()) + '.');
-    L.push('Ref: NC1 · ' + (EV && EV.ref ? EV.ref : 'algemeen') + ' · verstuurd via de nacalculatiepagina van Erfgoed Events');
+    L.push('Ref: NC2 · ' + (EV && EV.ref ? EV.ref : 'algemeen') + ' · verstuurd via de nacalculatiepagina van Erfgoed Events');
     return L;
   }
   function onderwerp(){ var e = S.event; return 'Nacalculatie event · ' + (t(e.klant) || '?') + ' · ' + (datumKort(e.datum) || '?') + ' · ' + (t(e.locatie) || '?'); }
@@ -670,9 +721,11 @@
   function mailto(){ return 'mailto:' + NAAR + '?subject=' + encodeURIComponent(onderwerp()) + '&body=' + encodeURIComponent(mailtekst().replace(/\n/g, '\r\n')); }
 
   // ---------- weergave van status en controle ----------
-  var BLOKNAAM = { event: 'Event', gasten: 'Gasten', tijd: 'Tijd', drank: 'Drank', extra: 'Extra besteld', gratis: 'Kosteloos weggegeven', nietdoor: 'Niet doorgegaan', breuk: 'Breuk of schade', opm: 'Opmerkingen', versturen: 'Versturen' };
+  var BLOKNAAM = { event: 'Event', gasten: 'Gasten', tijd: 'Tijd', drank: 'Drank', extra: 'Extra besteld', gratis: 'Kosteloos weggegeven', nietdoor: 'Niet doorgegaan', breuk: 'Breuk of schade', eval: 'Evaluatie', versturen: 'Versturen' };
   function werkBij(){
     zetKeuzes();
+    THEMAS.forEach(function(k){ var b = document.querySelector('.eval[data-eval="' + k + '"]'); if (b) b.classList.toggle('is-ok', !!S.ev[k].ok); });
+    $('e-alles').checked = allesPerfect();
     var c = controles();
     var nodig = c.filter(function(x){ return x.niveau === 'nodig'; }), letop = c.filter(function(x){ return x.niveau === 'letop'; });
     var ul = $('controle');
@@ -681,7 +734,8 @@
     Object.keys(BLOKNAAM).forEach(function(b){
       var el = document.querySelector('[data-status="' + b + '"]'); if (!el) return;
       var n = c.filter(function(x){ return x.blok === b && x.niveau !== 'tip'; }).length;
-      el.textContent = n ? n + (n === 1 ? ' punt' : ' punten') : (blokIngevuld(b) ? 'ingevuld' : 'volgens afspraak');
+      if (b === 'eval') el.textContent = n ? n + (n === 1 ? ' punt' : ' punten') : (allesPerfect() ? 'alles perfect' : (blokIngevuld(b) ? 'ingevuld' : 'optioneel'));
+      else el.textContent = n ? n + (n === 1 ? ' punt' : ' punten') : (blokIngevuld(b) ? 'ingevuld' : 'volgens afspraak');
       el.classList.toggle('punt', !!n);
     });
     var knop = $('mail-knop');
@@ -705,12 +759,12 @@
       case 'gratis': return s.gratis.status === 'ja';
       case 'nietdoor': return s.nietdoor.status === 'ja';
       case 'breuk': return s.breuk.status === 'ja';
-      case 'opm': return !leeg(s.opm.verhaal) || s.opm.klacht === 'ja' || s.opm.toezegging === 'ja';
+      case 'eval': return !evaluatieLeeg();
     }
     return false;
   }
 
-  var bewaarTimer = null, werkTimer = null, vorigeEm = S.event.em;
+  var bewaarTimer = null, werkTimer = null, vorigeEm = '';
   function bewaar(){ clearTimeout(bewaarTimer); bewaarTimer = setTimeout(function(){ S.meta.bewaard = new Date().toISOString(); schrijf(KEY, JSON.stringify(S)); if (!leeg(S.event.em)) schrijf(EMKEY, t(S.event.em)); }, 250); }
   function later(){ clearTimeout(werkTimer); werkTimer = setTimeout(werkBij, 120); }
 
@@ -726,13 +780,17 @@
     if (/^drank\.wijnen\.\d+\.aantal$/.test(path)) { var i = +path.split('.')[2], wi = S.drank.wijnen[i], p = document.querySelector('[data-besteld="' + i + '"]'); if (p && wi) p.classList.toggle('te-veel', isNum(wi.aantal) && isNum(wi.besteld) && wi.aantal > wi.besteld); }
     bewaar(); if (el.type === 'checkbox') werkBij(); else later();
   });
-  document.addEventListener('change', function(ev){ var el = ev.target; if (el && el.tagName === 'SELECT' && el.hasAttribute('data-veld')) { setVeld(el.getAttribute('data-veld'), el.value); bewaar(); later(); } });
+  document.addEventListener('change', function(ev){
+    var el = ev.target; if (!el) return;
+    if (el.tagName === 'SELECT' && el.hasAttribute('data-veld')) { setVeld(el.getAttribute('data-veld'), el.value); bewaar(); later(); return; }
+    if (el.id === 'e-alles') { THEMAS.forEach(function(k){ S.ev[k].ok = el.checked; }); vulVelden($('b-eval')); bewaar(); werkBij(); }
+  });
   document.addEventListener('click', function(ev){
     var el = ev.target.closest ? ev.target.closest('button, a') : null; if (!el) return;
     if (el.parentNode && el.parentNode.hasAttribute && el.parentNode.hasAttribute('data-keuze') && el.hasAttribute('data-w')) {
       var path = el.parentNode.getAttribute('data-keuze'), w = el.getAttribute('data-w');
       var oud = get(path);
-      set(path, oud === w && !/^(gasten\.zoals|gasten\.anders|tijd\.later|drank\.(eigen|retour)|extra\.status|gratis\.status|nietdoor\.status|breuk\.status|opm\.(klacht|toezegging))$/.test(path) ? null : w);
+      set(path, oud === w && !/^(gasten\.zoals|gasten\.anders|tijd\.later|drank\.(eigen|retour)|extra\.status|gratis\.status|nietdoor\.status|breuk\.status|ev\.(klacht|toezegging))$/.test(path) ? null : w);
       if (path === 'tijd.later' && w === 'ja' && !isNum(S.tijd.minuten) && EV && t(EV.eindtijd) && t(S.tijd.einde)) { var u = verschil(EV.eindtijd, S.tijd.einde); if (u != null && u > 0) { S.tijd.minuten = u; vulVelden($('b-tijd')); } }
       if (path === 'gasten.zoals' && w === 'nee' && heeftOpgave() && S.gasten.diner == null) { S.gasten.diner = opg('diner'); S.gasten.borrel = opg('borrel'); S.gasten.kinderen = opg('kinderen'); vulVelden($('b-gasten')); }
       bewaar(); werkBij(); return;
@@ -783,10 +841,28 @@
   });
   function fallbackKopie(tekst){ var ta = document.createElement('textarea'); ta.value = tekst; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); }
 
-  bouwStatisch();
-  renderLijsten();
-  vulVelden(document);
-  werkBij();
+  function b64(sx){ sx = sx.replace(/-/g, '+').replace(/_/g, '/'); while (sx.length % 4) sx += '='; var bin = atob(sx), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  function uitLink(){
+    var m = /[#&]([ez])=([A-Za-z0-9_-]+)/.exec(location.hash || '');
+    if (!m) return Promise.resolve(null);
+    return Promise.resolve().then(function(){
+      var bytes = b64(m[2]);
+      if (m[1] === 'e') return JSON.parse(new TextDecoder().decode(bytes));
+      if (typeof DecompressionStream === 'undefined') throw new Error('geen DecompressionStream');
+      return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text().then(JSON.parse);
+    }).then(function(x){ if (!x || typeof x !== 'object' || !t(x.klant) || !/^\d{4}-\d{2}-\d{2}$/.test(t(x.datum))) throw new Error('onvolledig'); return x; });
+  }
+  function start(){
+    KEY = 'ee-nacalculatie-v1-' + (EV && EV.ref ? String(EV.ref).replace(/[^a-z0-9-]/gi, '').slice(0, 80) : 'algemeen');
+    laad();
+    vorigeEm = S.event.em;
+    bouwStatisch();
+    renderLijsten();
+    vulVelden(document);
+    werkBij();
+  }
+  if (EV) start();
+  else uitLink().then(function(x){ if (x) EV = x; }, function(){ $('link-melding').hidden = false; }).then(start);
   window.__nc = { state: function(){ return S; }, mailtekst: mailtekst, onderwerp: onderwerp, mailto: mailto, controles: controles };
 })();
 </script>
