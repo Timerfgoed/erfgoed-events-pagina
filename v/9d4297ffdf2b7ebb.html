@@ -11,10 +11,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <!--
   Erfgoed Events · Nacalculatie event (digitale versie van "Nacalculatie event" + "Tellijst dranken", pdf's 08-09-2026)
-  Template v1.1 · 13-10-2026 (09 Evaluatie, link per event) · bron en uitleg: templates/nacalculatie/README.md in de Hivemind.
+  Template v1.2 · 21-10-2026 (online versturen met foto's, kopiëren gerepareerd) · bron en uitleg: templates/nacalculatie/README.md.
   Bouwen: python3 templates/nacalculatie/build.py (vult alleen het blok nc-data). Niet per pagina aan de opmaak sleutelen.
-  Versturen = de mail-app van de eventmanager opent, gericht aan tim@erfgoedevents.nl (Tim 13-10-2026: nergens anders heen).
-  Geen server, geen script, geen Notion; wat de pagina onthoudt staat alleen in de browser van de eventmanager (concept).
+  Versturen: met "endpoint" in nc-data stuurt de knop "Verstuur naar Tim" alles naar het nacalculatie-endpoint (Google Apps Script
+  in Tims eigen account, scripts/nacalculatie-endpoint/), dat het als mail aan tim@erfgoedevents.nl verstuurt en nergens anders heen.
+  Zonder endpoint, of als dat niet lukt: de mail-app van de eventmanager opent, of hij kopieert de tekst. Geen Notion.
+  Wat de pagina onthoudt staat alleen in de browser van de eventmanager (concept); foto's alleen in het geheugen.
 -->
 <style>
   :root{
@@ -183,6 +185,30 @@
   .voorbeeld summary{cursor:pointer;font-weight:600;font-size:.92rem}
   .voorbeeld pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:.74rem;line-height:1.55;background:#fff;border:1px solid var(--line);padding:14px;margin:10px 0 0;max-height:420px;overflow:auto}
 
+  .fotos{margin-top:18px;padding:14px 16px 16px;border:1px solid var(--line);background:#fff;border-radius:var(--radius)}
+  .fotos .uitleg{margin:0 0 10px}
+  .foto-lijst{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-bottom:4px}
+  .foto-lijst:empty{display:none}
+  .foto{position:relative;aspect-ratio:1/1;border:1px solid var(--line);background:var(--paper-deep);overflow:hidden;border-radius:var(--radius)}
+  .foto img{width:100%;height:100%;object-fit:cover;display:block}
+  .foto button{position:absolute;top:4px;right:4px;width:32px;height:32px;border:0;border-radius:999px;background:rgba(31,23,20,.78);color:#fff;font-size:1.05rem;line-height:1;cursor:pointer}
+  .foto-knop{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+  .foto-knop input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+  .status{margin-top:14px;padding:12px 14px;background:#fff;border-left:3px solid var(--line-strong);font-size:.93rem}
+  .status.ok{border-left-color:var(--wine)}
+  .status.fout{border-left-color:var(--let-op)}
+  .status.fout b{color:var(--let-op)}
+  .status p{margin:0 0 6px}
+  .status p:last-child{margin-bottom:0}
+  .reserve{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
+  .reserve-kop{font-size:.92rem;color:var(--ink-soft);margin:0}
+  .reserve .knoppen{margin-top:10px}
+  .reserve .btn{min-height:44px;padding:10px 18px;font-size:.95rem}
+  #hp{position:absolute;left:0;width:1px;height:1px;min-height:0;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);opacity:0;pointer-events:none}
+  #online{position:relative}
+  .kopie-blok{margin-top:14px}
+  .kopie-blok textarea{font-family:var(--mono);font-size:.8rem;min-height:240px;margin-top:8px}
+
   .balk{position:sticky;bottom:0;z-index:5;background:rgba(31,23,20,.96);color:var(--paper);margin-top:28px;padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
   .balk .wrap{display:flex;align-items:center;gap:12px;justify-content:space-between}
   .balk .tekst{font-size:.86rem;line-height:1.35}
@@ -200,7 +226,7 @@
   <section class="kop">
     <div class="eyebrow">Voor de eventmanager · direct na afloop</div>
     <h1 id="titel">Nacalculatie <em>event.</em></h1>
-    <p class="intro">Vul in wat <b>anders ging dan afgesproken</b>. Ging iets volgens het draaiboek, dan laat je het staan. Personeelsuren hoef je niet in te vullen, die lopen automatisch mee. Ben je klaar, dan opent je mail met alles erin, gericht aan Tim.</p>
+    <p class="intro">Vul in wat <b>anders ging dan afgesproken</b>. Ging iets volgens het draaiboek, dan laat je het staan. Personeelsuren hoef je niet in te vullen, die lopen automatisch mee. <span id="intro-slot">Ben je klaar, dan opent je mail met alles erin, gericht aan Tim.</span></p>
     <div class="afspraak" id="afspraak" hidden>
       <span class="l">Afgesproken (uit het draaiboek)</span>
       <dl id="afspraak-lijst"></dl>
@@ -351,7 +377,8 @@
     <div class="vraag"><div class="keuze" data-keuze="breuk.status"><button type="button" data-w="nee">Nee</button><button type="button" data-w="ja">Ja</button></div></div>
     <div class="als" data-als="breuk.status=ja">
       <label class="l" for="x-breuk">Wat, hoeveel, en hoe kwam het?</label><textarea id="x-breuk" data-veld="breuk.wat" placeholder="Bijv. 6 wijnglazen, tafel omgestoten door een gast"></textarea>
-      <label class="vinkje"><input type="checkbox" data-veld="breuk.fotos"><span>Ik voeg foto's toe aan de mail (dat kan pas in je mail-app, vlak voor het versturen).</span></label>
+      <label class="vinkje" id="breuk-fotos-vinkje"><input type="checkbox" data-veld="breuk.fotos"><span>Ik voeg foto's toe aan de mail (dat kan pas in je mail-app, vlak voor het versturen).</span></label>
+      <p class="ref" id="breuk-fotos-online" hidden>Foto's voeg je onderaan toe, bij <b>10 Versturen</b>.</p>
     </div>
   </section>
 
@@ -402,24 +429,48 @@
     <ul class="controle" id="controle"></ul>
     <p class="alles-ok" id="alles-ok" hidden>Alles staat erin. Klaar om te versturen.</p>
     <label class="vinkje"><input type="checkbox" data-veld="af.akkoord"><span>Ik heb dit naar waarheid ingevuld, als <b id="akkoord-naam">eventmanager</b>.</span></label>
-    <div class="knoppen">
-      <a class="btn" id="mail-knop" href="#" aria-disabled="true">Open mail aan Tim</a>
-      <button type="button" class="btn twee" id="kopieer-knop">Kopieer de tekst</button>
+
+    <!-- online versturen: alleen als de pagina een endpoint heeft (nc-data) -->
+    <div id="online" hidden>
+      <div class="fotos">
+        <span class="l">Foto's meesturen <span style="text-transform:none;letter-spacing:0">(als je ze hebt)</span></span>
+        <p class="uitleg">Van breuk of schade, of van kapot of vies ingehuurd materiaal. Ze gaan als bijlage mee in de mail aan Tim.</p>
+        <div class="foto-lijst" id="foto-lijst"></div>
+        <label class="toevoegen foto-knop">+ Foto's kiezen<input type="file" id="foto-in" accept="image/*" multiple aria-label="Foto's kiezen"></label>
+        <p class="ref" id="foto-status" hidden></p>
+      </div>
+      <input type="text" id="hp" class="sr" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="knoppen"><button type="button" class="btn" id="verstuur-knop" aria-disabled="true">Verstuur naar Tim</button></div>
+      <p class="naar">Gaat als mail naar <b>tim@erfgoedevents.nl</b>, en nergens anders heen.</p>
+      <div class="status" id="online-status" role="status" aria-live="polite" hidden></div>
     </div>
-    <p class="naar">Gaat naar <b id="naar-adres">tim@erfgoedevents.nl</b>, en nergens anders heen. Breuk of schade? Voeg de foto's in je mail toe voordat je verstuurt.</p>
-    <div class="na-versturen" id="na-versturen" hidden>
-      <p><b>Je mail staat klaar.</b> Druk in je mail-app op versturen. Opende er niets? Kopieer de tekst en plak hem in een mail aan tim@erfgoedevents.nl.</p>
-      <button type="button" class="linkknop" id="nieuw-formulier">Klaar, nieuw formulier voor een volgend event</button>
+
+    <div id="reserve">
+      <p class="reserve-kop" id="reserve-kop" hidden>Lukt versturen niet, bijvoorbeeld zonder internet? Stuur het dan zelf: open je mail-app, of kopieer de tekst en plak hem in een mail aan Tim.</p>
+      <div class="knoppen">
+        <a class="btn" id="mail-knop" href="#" aria-disabled="true">Open mail aan Tim</a>
+        <button type="button" class="btn twee" id="kopieer-knop">Kopieer de tekst</button>
+      </div>
+      <p class="naar" id="naar-mail">Gaat naar <b id="naar-adres">tim@erfgoedevents.nl</b>, en nergens anders heen. Breuk of schade? Voeg de foto's in je mail toe voordat je verstuurt.</p>
+      <div class="na-versturen" id="na-versturen" hidden>
+        <p><b>Je mail staat klaar.</b> Druk in je mail-app op versturen. Opende er niets? Kopieer de tekst en plak hem in een mail aan tim@erfgoedevents.nl.</p>
+        <button type="button" class="linkknop" id="nieuw-formulier">Klaar, nieuw formulier voor een volgend event</button>
+      </div>
+      <p class="naar" id="kopieer-ok" role="status" hidden></p>
+      <div class="kopie-blok" id="kopie-blok" hidden>
+        <p class="naar"><b>Kopiëren lukte niet vanzelf.</b> De tekst staat hieronder. Selecteer hem en kies Kopiëren: op je telefoon houd je je vinger op de tekst, op een computer gebruik je Cmd+C of Ctrl+C. Plak hem daarna in een mail aan tim@erfgoedevents.nl.</p>
+        <textarea id="kopie-tekst" readonly aria-label="Tekst van de nacalculatie"></textarea>
+        <button type="button" class="linkknop" id="kopie-selecteer">Selecteer alles</button>
+      </div>
     </div>
-    <p class="naar" id="kopieer-ok" hidden></p>
-    <details class="voorbeeld"><summary>Bekijk de tekst die in de mail komt</summary><pre id="mail-voorbeeld"></pre></details>
+    <details class="voorbeeld"><summary>Bekijk de tekst die Tim krijgt</summary><pre id="mail-voorbeeld"></pre></details>
   </section>
 </main>
 
 <div class="balk" id="balk"><div class="wrap"><span class="tekst" id="balk-tekst">Nog niets ingevuld.</span><a class="btn" href="#b-versturen" id="balk-knop">Naar versturen</a></div></div>
-<footer><div class="wrap">Erfgoed Events · nacalculatie event, versie 1.1. Je concept blijft alleen op dit toestel bewaard tot je het wist.</div></footer>
+<footer><div class="wrap">Erfgoed Events · nacalculatie event, versie 1.2. Je concept blijft alleen op dit toestel bewaard tot je het wist.</div></footer>
 
-<script id="nc-data" type="application/json">{"versie":"1.1","naar":"tim@erfgoedevents.nl","event":{"klant":"Opening tentoonstelling & boekpresentatie","datum":"2026-10-20","locatie":"Slot Zuylen","ref":"2026-10-20-slot-zuylen"},"locaties":["Muiderslot","Fort bij Rijnauwen","Vliegbasis Soesterberg","Trompenburg Tuinen","Slot Zuylen","Grote Kerk Naarden","Royal Delft","Fort bij Abcoude","De Hollandsche Manege","Werkspoorkathedraal","Gevangenis Wolvenplein","Paleis Soestdijk"],"standaard_dranken":["Pils — Gulpener","Pils 0.0%","Fritz-Kola","Fritz-Kola zonder suiker","Fritz-Limo citroen","Appelsap van Schulp","Acqua Panna","San Pellegrino"]}</script>
+<script id="nc-data" type="application/json">{"versie":"1.2","naar":"tim@erfgoedevents.nl","event":{"klant":"Opening tentoonstelling & boekpresentatie","datum":"2026-10-20","locatie":"Slot Zuylen","ref":"2026-10-20-slot-zuylen"},"locaties":["Muiderslot","Fort bij Rijnauwen","Vliegbasis Soesterberg","Trompenburg Tuinen","Slot Zuylen","Grote Kerk Naarden","Royal Delft","Fort bij Abcoude","De Hollandsche Manege","Werkspoorkathedraal","Gevangenis Wolvenplein","Paleis Soestdijk"],"standaard_dranken":["Pils — Gulpener","Pils 0.0%","Fritz-Kola","Fritz-Kola zonder suiker","Fritz-Limo citroen","Appelsap van Schulp","Acqua Panna","San Pellegrino"],"endpoint":"","sleutel":"ee-nacalculatie-2026"}</script>
 <script>
 (function(){
   'use strict';
@@ -435,6 +486,13 @@
   var THEMANAAM = { personeel: 'Personeel', locatie: 'Locatie', keuken: 'Keuken', inhuur: 'Inhuur (alles ingehuurd wat nodig was?)', klant: 'Klant' };
   var EMKEY = 'ee-nacalculatie-em';
   var DAGEN = ['zo','ma','di','wo','do','vr','za'];
+  // online versturen (v1.2): alleen naar een Apps Script-web-app; de pagina geeft nooit een adres mee, dat staat vast in het script
+  var ENDPOINT = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{10,}\/exec$/.test(String(D.endpoint || '').trim()) ? String(D.endpoint).trim() : '';
+  var SLEUTEL = String(D.sleutel || '').trim();
+  var VERSIE = String(D.versie || '1.2');
+  var MAX_FOTOS = 8, MAX_ZIJDE = 1600;
+  var FOTOS = [];   // alleen in het geheugen: { data: base64 (jpeg), voorbeeld: data-url, grootte: bytes }
+  var bezig = false, nogmaals = false;
 
   function pad(n){ return (n < 10 ? '0' : '') + n; }
   function iso(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -462,7 +520,7 @@
       breuk: { status: 'nee', wat: '', fotos: false },
       ev: nieuweEvaluatie(),
       af: { akkoord: false },
-      meta: { gestart: new Date().toISOString(), geopend: null }
+      meta: { gestart: new Date().toISOString(), geopend: null, verstuurd: null }
     };
     if (heeftOpgave()) { s.gasten.diner = opg('diner'); s.gasten.borrel = opg('borrel'); s.gasten.kinderen = opg('kinderen'); }
     if (EV && Array.isArray(EV.wijnen) && EV.wijnen.length) {
@@ -496,7 +554,11 @@
       var tijdstip = s.meta && s.meta.bewaard ? new Date(s.meta.bewaard) : null;
       var wanneer = function(d){ return DAGEN[d.getDay()] + ' ' + pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + ' om ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
       var geopend = s.meta && s.meta.geopend ? new Date(s.meta.geopend) : null;
-      if (geopend && !isNaN(geopend)) {
+      var verstuurd = s.meta && s.meta.verstuurd && s.meta.verstuurd.tijd ? new Date(s.meta.verstuurd.tijd) : null;
+      if (verstuurd && !isNaN(verstuurd)) {
+        $('concept-tekst').textContent = 'Dit formulier (' + (t(s.event.klant) || 'zonder naam') + ') heb je ' + wanneer(verstuurd) + ' naar Tim verstuurd' + (t(s.meta.verstuurd.nummer) ? ' (ontvangstnummer ' + t(s.meta.verstuurd.nummer) + ')' : '') + '. Voor een volgend event begin je opnieuw; voor een correctie pas je het aan en verstuur je het nog eens.';
+        $('wis-start').textContent = 'Nieuw formulier';
+      } else if (geopend && !isNaN(geopend)) {
         $('concept-tekst').textContent = 'Dit formulier (' + (t(s.event.klant) || 'zonder naam') + ') heb je ' + wanneer(geopend) + ' al naar je mail gezet. Voor een volgend event begin je opnieuw; voor een correctie pas je het aan en verstuur je het nog eens.';
         $('wis-start').textContent = 'Nieuw formulier';
       } else {
@@ -522,6 +584,16 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-keuze]'), function(g){ g.setAttribute('role', 'group'); var vr = g.closest('.vraag'), lab = vr && vr.querySelector('.l'); if (lab) { if (!lab.id) lab.id = 'lbl-' + g.getAttribute('data-keuze').replace(/\./g, '-'); g.setAttribute('aria-labelledby', lab.id); } else { var blok = g.closest('.blok'), h = blok && blok.querySelector('h2'); if (h) g.setAttribute('aria-labelledby', h.id); } });
     var dl = $('locaties'); dl.innerHTML = LOCATIES.map(function(l){ return '<option value="' + esc(l) + '"></option>'; }).join('');
     $('naar-adres').textContent = NAAR;
+    if (ENDPOINT) {
+      $('online').hidden = false;
+      $('reserve').className = 'reserve';
+      $('reserve-kop').hidden = false;
+      $('mail-knop').className = 'btn twee';
+      $('naar-mail').innerHTML = 'Met je mail-app gaat het ook alleen naar <b>' + esc(NAAR) + '</b>. Foto\'s voeg je daar zelf toe.';
+      $('intro-slot').textContent = 'Ben je klaar, dan verstuur je alles met één knop naar Tim.';
+      $('breuk-fotos-vinkje').hidden = true;
+      $('breuk-fotos-online').hidden = false;
+    }
     if (EV) {
       var klant = t(EV.klant);
       if (klant) {
@@ -646,7 +718,7 @@
     }
     if (S.gratis.status === 'ja' && leeg(S.gratis.wat)) add('letop', 'gratis', 'Kosteloos weggegeven: wat en waarom?');
     if (S.nietdoor.status === 'ja' && leeg(S.nietdoor.wat)) add('letop', 'nietdoor', 'Niet doorgegaan: wat, en waarom niet?');
-    if (S.breuk.status === 'ja') { if (leeg(S.breuk.wat)) add('letop', 'breuk', 'Breuk of schade: wat, hoeveel en hoe?'); if (!S.breuk.fotos) add('tip', 'breuk', 'Breuk of schade: voeg foto\'s toe aan de mail als je die hebt.'); }
+    if (S.breuk.status === 'ja') { if (leeg(S.breuk.wat)) add('letop', 'breuk', 'Breuk of schade: wat, hoeveel en hoe?'); if (ENDPOINT ? !FOTOS.length : !S.breuk.fotos) add('tip', 'breuk', ENDPOINT ? 'Breuk of schade: heb je foto\'s? Voeg ze toe bij Versturen.' : 'Breuk of schade: voeg foto\'s toe aan de mail als je die hebt.'); }
     var E = S.ev;
     if (E.klacht === 'ja' && leeg(E.klacht_wat)) add('letop', 'eval', 'Klacht: wat was er, en van wie?');
     if (E.toezegging === 'ja' && leeg(E.toezegging_wat)) add('letop', 'eval', 'Toezegging: wat is er toegezegd, en aan wie?');
@@ -660,7 +732,7 @@
   function allesPerfect(){ return THEMAS.every(function(k){ return S.ev[k].ok; }); }
 
   // ---------- de mail ----------
-  function regels(){
+  function regels(online){
     var e = S.event, L = [], dr = S.drank, g = S.gasten, tj = S.tijd;
     L.push('NACALCULATIE EVENT · ERFGOED EVENTS');
     L.push('Klant / event: ' + t(e.klant));
@@ -674,7 +746,7 @@
       if (g.zoals === 'nee') { L.push('Werkelijk: diner ' + (g.diner || 0) + ' · alleen borrel ' + (g.borrel || 0) + ' · kinderen ' + (g.kinderen || 0)); L.push('Anders dan de opgave: ja' + (t(g.toelichting) ? '. ' + t(g.toelichting) : '')); }
       else L.push('Werkelijk: zoals opgegeven');
     } else {
-      L.push('Diner ' + (isNum(g.diner) ? g.diner : '?') + ' · alleen borrel ' + (isNum(g.borrel) ? g.borrel : 0) + ' · kinderen ' + (isNum(g.kinderen) ? g.kinderen : 0));
+      L.push('Diner ' + (isNum(g.diner) ? g.diner : 'niet ingevuld') + ' · alleen borrel ' + (isNum(g.borrel) ? g.borrel : 0) + ' · kinderen ' + (isNum(g.kinderen) ? g.kinderen : 0));
       L.push('Anders dan de opgave vooraf: ' + (g.anders === 'ja' ? 'ja' + (t(g.toelichting) ? '. ' + t(g.toelichting) : '') : 'nee'));
     }
     L.push('Crew mee-gegeten: ' + (isNum(g.crew) ? g.crew : 0));
@@ -701,7 +773,9 @@
     L.push('');
     L.push('KOSTELOOS WEGGEGEVEN: ' + (S.gratis.status === 'ja' ? 'ja. ' + (t(S.gratis.wat) || 'niet ingevuld') : 'nee'));
     L.push('NIET DOORGEGAAN: ' + (S.nietdoor.status === 'ja' ? 'ja. ' + (t(S.nietdoor.wat) || 'niet ingevuld') : 'nee'));
-    L.push('BREUK OF SCHADE: ' + (S.breuk.status === 'ja' ? 'ja. ' + (t(S.breuk.wat) || 'niet ingevuld') + (S.breuk.fotos ? " · foto's bij deze mail" : " · geen foto's") : 'nee'));
+    var fotoNoot = online ? (FOTOS.length ? " · zie de foto's" : " · geen foto's") : (S.breuk.fotos ? " · foto's bij deze mail" : " · geen foto's");
+    L.push('BREUK OF SCHADE: ' + (S.breuk.status === 'ja' ? 'ja. ' + (t(S.breuk.wat) || 'niet ingevuld') + fotoNoot : 'nee'));
+    if (online && FOTOS.length) L.push("FOTO'S: " + FOTOS.length + ' meegestuurd (' + fotoNamen().join(', ') + ')');
     L.push('');
     var E = S.ev;
     L.push('EVALUATIE' + (allesPerfect() ? ' (alles was perfect)' : ''));
@@ -713,9 +787,11 @@
     if (open.length) { L.push(''); L.push('NOG OPEN BIJ VERSTUREN'); open.forEach(function(x){ L.push('- ' + x.tekst); }); }
     L.push('');
     L.push('Ingevuld door ' + (t(e.em) || '?') + (S.af.akkoord ? ', naar waarheid' : '') + ', ' + datumNL(iso(new Date())) + ' ' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()) + '.');
-    L.push('Ref: NC2 · ' + (EV && EV.ref ? EV.ref : 'algemeen') + ' · verstuurd via de nacalculatiepagina van Erfgoed Events');
+    L.push('Ref: NC2 · ' + (EV && EV.ref ? EV.ref : 'algemeen') + ' · verstuurd via de nacalculatiepagina van Erfgoed Events' + (online ? ' (online)' : ''));
     return L;
   }
+  function fotoNamen(){ var basis = 'nacalculatie-' + (/^\d{4}-\d{2}-\d{2}$/.test(t(S.event.datum)) ? t(S.event.datum) : 'event'); return FOTOS.map(function(f, i){ return basis + '-foto-' + (i + 1) + '.jpg'; }); }
+  function onlineTekst(){ return regels(true).join('\n'); }
   function onderwerp(){ var e = S.event; return 'Nacalculatie event · ' + (t(e.klant) || '?') + ' · ' + (datumKort(e.datum) || '?') + ' · ' + (t(e.locatie) || '?'); }
   function mailtekst(){ return regels().join('\n'); }
   function mailto(){ return 'mailto:' + NAAR + '?subject=' + encodeURIComponent(onderwerp()) + '&body=' + encodeURIComponent(mailtekst().replace(/\n/g, '\r\n')); }
@@ -741,8 +817,14 @@
     var knop = $('mail-knop');
     if (nodig.length) { knop.setAttribute('aria-disabled', 'true'); knop.setAttribute('href', '#b-versturen'); }
     else { knop.removeAttribute('aria-disabled'); knop.setAttribute('href', mailto()); }
+    if (ENDPOINT) {
+      var vk = $('verstuur-knop');
+      if (nodig.length || bezig) vk.setAttribute('aria-disabled', 'true'); else vk.removeAttribute('aria-disabled');
+      if (!bezig) vk.textContent = S.meta && S.meta.verstuurd ? (nogmaals ? 'Ja, verstuur de correctie' : 'Verstuur opnieuw (correctie)') : 'Verstuur naar Tim';
+      vk.className = S.meta && S.meta.verstuurd && !nogmaals ? 'btn twee' : 'btn';
+    }
     $('akkoord-naam').textContent = t(S.event.em) || 'eventmanager';
-    $('mail-voorbeeld').textContent = 'Aan: ' + NAAR + '\nOnderwerp: ' + onderwerp() + '\n\n' + mailtekst();
+    $('mail-voorbeeld').textContent = 'Aan: ' + NAAR + '\nOnderwerp: ' + onderwerp() + '\n\n' + (ENDPOINT ? onlineTekst() : mailtekst());
     var bt = $('balk-tekst');
     if (nodig.length) bt.innerHTML = '<b>Nog nodig: ' + nodig.length + '</b>' + (letop.length ? ' · na te lopen: ' + letop.length : '');
     else if (letop.length) bt.innerHTML = '<b>Klaar om te versturen</b> · nog ' + letop.length + ' ' + (letop.length === 1 ? 'punt' : 'punten') + ' om na te lopen';
@@ -784,6 +866,7 @@
     var el = ev.target; if (!el) return;
     if (el.tagName === 'SELECT' && el.hasAttribute('data-veld')) { setVeld(el.getAttribute('data-veld'), el.value); bewaar(); later(); return; }
     if (el.id === 'e-alles') { THEMAS.forEach(function(k){ S.ev[k].ok = el.checked; }); vulVelden($('b-eval')); bewaar(); werkBij(); }
+    if (el.id === 'foto-in') { var gekozen = Array.prototype.slice.call(el.files || []); el.value = ''; voegFotosToe(gekozen); }
   });
   document.addEventListener('click', function(ev){
     var el = ev.target.closest ? ev.target.closest('button, a') : null; if (!el) return;
@@ -829,17 +912,135 @@
       $('na-versturen').hidden = false;
       return; // de link opent de mail-app zelf
     }
+    if (el.id === 'verstuur-knop') { ev.preventDefault(); verstuur(); return; }
+    if (el.hasAttribute('data-foto-weg')) { FOTOS.splice(+el.getAttribute('data-foto-weg'), 1); renderFotos(); fotoStatus(); werkBij(); return; }
+    if (el.id === 'kopie-selecteer') { selecteerKopie(); return; }
     if (el.id === 'kopieer-knop') {
-      var tekst = 'Aan: ' + NAAR + '\nOnderwerp: ' + onderwerp() + '\n\n' + mailtekst();
-      var klaar = function(){ var k = $('kopieer-ok'); k.hidden = false; k.innerHTML = '<b>Gekopieerd.</b> Plak de tekst in een nieuwe mail aan ' + esc(NAAR) + ' en neem het onderwerp over.'; };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tekst).then(klaar, function(){ fallbackKopie(tekst); klaar(); });
-      else { fallbackKopie(tekst); klaar(); }
+      // alleen de mailtekst (zonder Aan/Onderwerp), zodat plakken en versturen genoeg is
+      var tekst = mailtekst();
+      $('kopieer-ok').hidden = true; $('kopie-blok').hidden = true;
+      kopieer(tekst).then(function(gelukt){
+        if (gelukt) { var k = $('kopieer-ok'); k.hidden = false; k.innerHTML = '<b>Gekopieerd.</b> Open een nieuwe mail aan ' + esc(NAAR) + ', plak de tekst en verstuur. Het onderwerp mag je zelf kiezen.'; }
+        else toonKopie(tekst);
+      });
       return;
     }
     if (el.id === 'wis-start') { el.hidden = true; $('wis-zeker').hidden = false; return; }
-    if (el.id === 'wis-zeker' || el.id === 'nieuw-formulier') { wis(KEY); S = nieuw(); renderLijsten(); vulVelden(document); werkBij(); $('concept-melding').hidden = true; $('na-versturen').hidden = true; $('kopieer-ok').hidden = true; $('wis-start').hidden = false; $('wis-start').textContent = 'Wis en begin opnieuw'; $('wis-zeker').hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (el.id === 'wis-zeker' || el.id === 'nieuw-formulier' || el.getAttribute('data-actie') === 'nieuw') {
+      wis(KEY); S = nieuw(); FOTOS = []; nogmaals = false; renderFotos(); fotoStatus(); renderLijsten(); vulVelden(document); werkBij();
+      $('concept-melding').hidden = true; $('na-versturen').hidden = true; $('kopieer-ok').hidden = true; $('kopie-blok').hidden = true; $('online-status').hidden = true;
+      $('wis-start').hidden = false; $('wis-start').textContent = 'Wis en begin opnieuw'; $('wis-zeker').hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' }); return;
+    }
   });
-  function fallbackKopie(tekst){ var ta = document.createElement('textarea'); ta.value = tekst; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} document.body.removeChild(ta); }
+
+  // ---------- kopiëren (v1.2): binnen de klik, eerlijk over het resultaat ----------
+  function kopieerSync(tekst){
+    var ta = document.createElement('textarea'), ok = false, actief = document.activeElement;
+    ta.value = tekst;
+    ta.setAttribute('aria-hidden', 'true');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:2em;height:2em;padding:0;border:0;outline:0;box-shadow:none;background:transparent;opacity:0;font-size:16px;';
+    document.body.appendChild(ta);
+    try { ta.focus({ preventScroll: true }); } catch (e) { ta.focus(); }
+    ta.select();
+    try { ta.setSelectionRange(0, tekst.length); } catch (e) {}
+    try { ok = document.execCommand('copy') === true; } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    if (actief && actief.focus) { try { actief.focus({ preventScroll: true }); } catch (e) {} }
+    return ok;
+  }
+  function kopieer(tekst){
+    var ok = false;
+    try { ok = kopieerSync(tekst); } catch (e) { ok = false; }
+    if (ok) return Promise.resolve(true);
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      try { return navigator.clipboard.writeText(tekst).then(function(){ return true; }, function(){ return false; }); } catch (e) {}
+    }
+    return Promise.resolve(false);
+  }
+  function toonKopie(tekst){ var b = $('kopie-blok'); $('kopie-tekst').value = tekst; b.hidden = false; selecteerKopie(); b.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  function selecteerKopie(){ var ta = $('kopie-tekst'); try { ta.focus({ preventScroll: true }); } catch (e) { ta.focus(); } ta.select(); try { ta.setSelectionRange(0, ta.value.length); } catch (e) {} }
+
+  // ---------- foto's (alleen bij online versturen): verkleinen op het toestel, alleen in het geheugen ----------
+  function voegFotosToe(lijst){
+    if (!lijst.length) return;
+    var ruimte = MAX_FOTOS - FOTOS.length, teVeel = lijst.length > ruimte, kapot = 0;
+    lijst = lijst.slice(0, Math.max(0, ruimte));
+    var st = $('foto-status'); st.hidden = false; st.textContent = lijst.length ? 'Foto\'s klaarmaken…' : '';
+    lijst.reduce(function(p, f){ return p.then(function(){ return verklein(f).then(function(r){ FOTOS.push(r); renderFotos(); }, function(){ kapot++; }); }); }, Promise.resolve())
+      .then(function(){ fotoStatus(kapot, teVeel); werkBij(); });
+  }
+  function verklein(file){
+    return new Promise(function(resolve, reject){
+      if (file.type && !/^image\//.test(file.type)) { reject(new Error('geen foto')); return; }
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function(){
+        try {
+          var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          if (!w || !h) throw new Error('leeg');
+          var s = Math.min(1, MAX_ZIJDE / Math.max(w, h));
+          var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+          var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+          var du = c.toDataURL('image/jpeg', 0.82);
+          URL.revokeObjectURL(url);
+          if (!/^data:image\/jpeg;base64,/.test(du)) throw new Error('omzetten mislukt');
+          var b64 = du.slice(du.indexOf(',') + 1);
+          resolve({ data: b64, voorbeeld: du, grootte: Math.round(b64.length * 3 / 4) });
+        } catch (e) { try { URL.revokeObjectURL(url); } catch (x) {} reject(e); }
+      };
+      img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('onleesbaar')); };
+      img.src = url;
+    });
+  }
+  function renderFotos(){ $('foto-lijst').innerHTML = FOTOS.map(function(f, i){ return '<div class="foto"><img src="' + f.voorbeeld + '" alt="Foto ' + (i + 1) + '"><button type="button" data-foto-weg="' + i + '" aria-label="Foto ' + (i + 1) + ' weghalen">×</button></div>'; }).join(''); }
+  function fotoStatus(kapot, teVeel){
+    var st = $('foto-status'), d = [];
+    if (FOTOS.length) { var mb = FOTOS.reduce(function(a, f){ return a + f.grootte; }, 0) / 1048576; d.push(FOTOS.length + (FOTOS.length === 1 ? ' foto' : ' foto\'s') + ' klaar om mee te sturen (' + nl(Math.max(0.1, Math.round(mb * 10) / 10)) + ' MB).'); }
+    if (kapot) d.push(kapot + (kapot === 1 ? ' foto kon' : ' foto\'s konden') + ' niet worden gelezen.');
+    if (teVeel) d.push('Er kunnen hoogstens ' + MAX_FOTOS + ' foto\'s mee.');
+    st.textContent = d.join(' '); st.hidden = !d.length;
+  }
+
+  // ---------- online versturen (v1.2) ----------
+  function toonStatus(soort, html){ var s = $('online-status'); s.className = 'status' + (soort ? ' ' + soort : ''); s.innerHTML = html; s.hidden = false; }
+  function verstuur(){
+    if (!ENDPOINT || bezig) return;
+    werkBij();
+    var eerstNodig = controles().filter(function(x){ return x.niveau === 'nodig'; })[0];
+    if (eerstNodig) { var dB = $(eerstNodig.blok === 'versturen' ? 'b-versturen' : 'b-' + eerstNodig.blok); dB.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (S.meta.verstuurd && !nogmaals) {
+      nogmaals = true;
+      toonStatus('', '<p>Je hebt dit formulier al verstuurd' + (t(S.meta.verstuurd.nummer) ? ' (ontvangstnummer ' + esc(S.meta.verstuurd.nummer) + ')' : '') + '. Druk nog een keer als je een correctie wilt sturen; Tim krijgt dan een nieuwe mail.</p>');
+      werkBij(); return;
+    }
+    bezig = true; nogmaals = false;
+    var knop = $('verstuur-knop'); knop.setAttribute('aria-disabled', 'true'); knop.textContent = 'Bezig met versturen…';
+    toonStatus('', '<p>Bezig met versturen' + (FOTOS.length ? ' (met ' + FOTOS.length + (FOTOS.length === 1 ? ' foto' : ' foto\'s') + ')' : '') + '. Sluit de pagina nog niet.</p>');
+    var namen = fotoNamen();
+    var payload = JSON.stringify({
+      sleutel: SLEUTEL, versie: VERSIE, ref: EV && EV.ref ? String(EV.ref) : 'algemeen', em: t(S.event.em),
+      onderwerp: onderwerp(), tekst: onlineTekst(),
+      fotos: FOTOS.map(function(f, i){ return { naam: namen[i], type: 'image/jpeg', data: f.data }; }),
+      hp: $('hp').value || ''
+    });
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    var wekker = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 90000);
+    fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: payload, redirect: 'follow', signal: ctrl ? ctrl.signal : undefined })
+      .then(function(r){ if (!r.ok) throw new Error('de server gaf status ' + r.status); return r.text(); })
+      .then(function(txt){ var j = null; try { j = JSON.parse(txt); } catch (e) {} if (!j) throw new Error('onverwacht antwoord van de server'); if (j.ok !== true) throw new Error(j.fout || 'geweigerd'); return j; })
+      .then(function(j){ clearTimeout(wekker); bezig = false; gelukt(j); }, function(err){ clearTimeout(wekker); bezig = false; mislukt(err); });
+  }
+  function gelukt(j){
+    S.meta.verstuurd = { tijd: new Date().toISOString(), nummer: t(j.nummer), fotos: FOTOS.length };
+    bewaar(); werkBij();
+    toonStatus('ok', '<p><b>Verstuurd.</b> Je nacalculatie is als mail naar Tim gegaan' + (t(j.nummer) ? ' (ontvangstnummer ' + esc(j.nummer) + ')' : '') + '. Je hoeft verder niets te doen.</p><p><button type="button" class="linkknop" data-actie="nieuw">Nieuw formulier voor een volgend event</button></p>');
+  }
+  function mislukt(err){
+    var m = String((err && err.message) || err || '');
+    var reden = err && err.name === 'AbortError' ? 'het duurde te lang' : (/failed to fetch|networkerror|load failed|network/i.test(m) ? 'geen verbinding met internet?' : m);
+    werkBij();
+    toonStatus('fout', '<p><b>Versturen lukte niet</b> (' + esc(reden) + '). Je invoer is bewaard. Probeer het zo nog eens, of stuur het zelf: open je mail-app of kopieer de tekst (hieronder).</p>');
+    $('online-status').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
   function b64(sx){ sx = sx.replace(/-/g, '+').replace(/_/g, '/'); while (sx.length % 4) sx += '='; var bin = atob(sx), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
   function uitLink(){
@@ -863,7 +1064,7 @@
   }
   if (EV) start();
   else uitLink().then(function(x){ if (x) EV = x; }, function(){ $('link-melding').hidden = false; }).then(start);
-  window.__nc = { state: function(){ return S; }, mailtekst: mailtekst, onderwerp: onderwerp, mailto: mailto, controles: controles };
+  window.__nc = { state: function(){ return S; }, mailtekst: mailtekst, onlineTekst: onlineTekst, onderwerp: onderwerp, mailto: mailto, controles: controles, fotos: function(){ return FOTOS.length; }, endpoint: ENDPOINT };
 })();
 </script>
 </body>
